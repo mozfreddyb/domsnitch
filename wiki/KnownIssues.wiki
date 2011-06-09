@@ -2,7 +2,7 @@
 
 ===Issue 1: I tried intercepting eval() and my application did not load properly===
 
-Generally speaking, eval() is not a typical function in the JavaScript world. As part of its magic, eval() is aware of the scope from which it is called. More information on this problem is available [http://radi.r-n-d.org/2011/02/evil-magic-of-eval.html here]
+Generally speaking, eval() is not a typical function in the JavaScript world. As part of its magic, eval() is aware of the scope from which it is called. More information on this problem is available [http://radi.r-n-d.org/2011/02/evil-magic-of-eval.html here].
 
 
 ===Issue 2: My application uses applicationCache...===

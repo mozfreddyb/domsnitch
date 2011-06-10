@@ -1,0 +1,139 @@
+/**
+ * Copyright 2011 Google Inc. All Rights Reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *  
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#contentTable {
+  width: 100%;
+}
+
+#cursor {
+  background: whiteSmoke;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 3px 3px 3px 3px;
+  position: absolute;
+  right: 7px;
+  top: 25px;
+  width: 240px;
+}
+
+#cursor .highlighted {
+  background: #e3e9ff;
+}
+
+#cursor .normal {
+}
+
+#statusBar {
+  background: #fad163;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 3px 3px 3px 3px;
+  position: absolute;
+  right: 40%;
+  text-align: center;
+  top: 0px;
+  width: 20%;
+}
+
+#topMenu {
+  text-align: right;
+}
+
+#titleRow {
+  background-color: #bcf;  
+  color: #000;
+  font-weight: bold;
+}
+
+body {
+  color: #222;
+  font: 12px Verdana;
+}
+
+table .recordClicked {
+  background: #68e;
+  color: white;
+  font-weight: bold;
+}
+
+table .recordCodeLine {
+  font-style: italic;
+  font-weight: none;
+}
+
+table .recordCodeSnippet {
+  background: #fcfcfc;
+  font-family: courier new;
+  font-weight: none;
+  padding: 10px;
+}
+
+table .recordId {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+table .recordInvisible {
+  display: none;
+}
+
+table .recordMenu {
+  text-align: right;
+  color: #78c;
+  font-weight: bold;
+}
+
+table .recordSectionSubtitle {
+  font-color: #000;
+  font-weight: bold;
+}
+
+table .recordUpdated {
+  background: #eee;
+}
+
+table .recordVisible {
+  background: #e3e9ff;
+  color: #333;
+  display: table-cell;
+  margin-top: 10px;
+  padding: 10px;
+  width: 100%;
+}
+
+table .riskHigh {
+  background: #f99;
+}
+
+table .riskMedium {
+  background: #fff7d7;
+}
+
+table .riskLow {
+  background: #d9f2db;
+}
+
+td {
+  border-bottom: 1px solid #ccc;
+  height: 20px;
+  padding: 5px 10px 5px 10px;
+}
+
+
+
+
+

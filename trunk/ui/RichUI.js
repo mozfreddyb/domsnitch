@@ -281,6 +281,7 @@ DOMSnitch.UI.RichUI.prototype.exportRecordAsText = function(recordId) {
 
 DOMSnitch.UI.RichUI.prototype.exportRecordToGDocs = function(recordId) {
   var statusBar = new DOMSnitch.UI.StatusBar(this);
-  var gDocsExport = new DOMSnitch.Export.GoogleDocs(this._parent, statusBar);
-  gDocsExport.singleExport(DOMSnitch.Scanner.STATUS.NONE, recordId);
+  var scanVerbosity = DOMSnitch.Scanner.STATUS.NONE;
+  var gDocsExport = new DOMSnitch.Export.GoogleDocs(this._parent, statusBar, scanVerbosity);
+  gDocsExport.singleExport(recordId);
 }

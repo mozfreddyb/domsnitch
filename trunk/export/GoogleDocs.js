@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-DOMSnitch.Export.GoogleDocs = function(parent, statusBar) {
+DOMSnitch.Export.GoogleDocs = function(parent, statusBar, scanVerbosity) {
   this._parent = parent;
   this._statusBar = statusBar;
   this._searchFunction = undefined;
   this._worksheetFeed = "";
   this._postLink = "";
   this._spreadsheetLink = "";
-  this._scanStatus = DOMSnitch.Scanner.STATUS.NONE;
+  this._scanVerbosity = scanVerbosity ? scanVerbosity : DOMSnitch.Scanner.STATUS.NONE;
   this._scanner = new DOMSnitch.Scanner();
   
   this._colTitles = [
@@ -60,10 +60,14 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     		"<entry xmlns=\"http://www.w3.org/2005/Atom\">" +
     		"<category scheme=\"http://schemas.google.com/g/2005#kind\" " +
     		"term=\"http://schemas.google.com/docs/2007#spreadsheet\"/>" +
-    		"<title>DOM Snitch export ({0})</title>" +
+    		"<title>DOM Snitch: Export {1} @ {0}</title>" +
     		"</entry>";
 
-    body = this._populateXmlString(body, [(new Date).toISOString()]);
+    var verbosity = this._scanner.stringifyStatusCode(this._scanVerbosity);
+    if(verbosity.length > 0) {
+      verbosity = "of " + verbosity.toLowerCase() + " ranked records";
+    }
+    body = this._populateXmlString(body, [(new Date).toISOString(), verbosity]);
     
     this._makeRequest("post", url, body, 
       this._createXhrStateChangeHandler(this._processSpreadsheetInfo.bind(this)));
@@ -96,6 +100,13 @@ DOMSnitch.Export.GoogleDocs.prototype = {
   
   _getRecordCount: function(count) {
     this._recordCount += count;
+  },
+  
+  _handleExportError: function() {
+    //TODO: Add clean-up code
+    
+    this._statusBar.hide();
+    alert("An error while exporting has occured. Please try again in a few moments.");
   },
   
   _htmlEncode: function(data) {
@@ -138,14 +149,42 @@ DOMSnitch.Export.GoogleDocs.prototype = {
   },
   
   _processHeaderCell: function(col, responseText) {
-    var responseObject = JSON.parse(responseText);
+    try {
+      var responseObject = JSON.parse(responseText);
+    } catch (e) {
+      this._handleExportError();
+      return;
+    }
+
     var etag = responseObject.entry["gd$etag"];
-    
     this._updateHeaderCell(col, etag);
   },
   
+  _processPostInfo: function(responseText) {
+    try {
+      var responseObject = JSON.parse(responseText);
+    } catch (e) {
+      this._handleExportError();
+      return;
+    }
+    
+    for(var i = 0; i < responseObject.feed.link.length; i++) {
+      var link = responseObject.feed.link[i];
+      if(link.rel.indexOf("#feed") > 0) {
+        this._postLink = link.href;
+      }
+    }
+    
+    this._queryHeaderCell(1);
+  },
+  
   _processSpreadsheetInfo: function(responseText) {
-    var responseObject = JSON.parse(responseText);
+    try {
+      var responseObject = JSON.parse(responseText);
+    } catch (e) {
+      this._handleExportError();
+      return;
+    }
 
     for(var i = 0; i < responseObject.entry.link.length; i++) {
       var link = responseObject.entry.link[i];
@@ -165,20 +204,6 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     
     this._makeRequest("get", url, "", 
       this._createXhrStateChangeHandler(this._processHeaderCell.bind(this, col)));
-  },
-  
-  _processPostInfo: function(responseText) {
-    var responseObject = JSON.parse(responseText);
-    console.debug(responseObject);
-    
-    for(var i = 0; i < responseObject.feed.link.length; i++) {
-      var link = responseObject.feed.link[i];
-      if(link.rel.indexOf("#feed") > 0) {
-        this._postLink = link.href;
-      }
-    }
-    
-    this._queryHeaderCell(1);
   },
   
   _sendRecords: function() {
@@ -250,8 +275,7 @@ DOMSnitch.Export.GoogleDocs.prototype = {
       this._createXhrStateChangeHandler(callback), etag);
   },
   
-  bulkExport: function(scanStatus) {
-    this._scanStatus = scanStatus;
+  bulkExport: function() {
     this._parent.storage.getRecordCount(this._getRecordCount.bind(this));
     this._searchFunction = this._parent.storage.selectAll.bind(this._parent.storage, "id", "asc");
     this._startExport();
@@ -264,7 +288,7 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     }
     var scanResult = this._scanner.check(record);
     
-    if(this._scanStatus == DOMSnitch.Scanner.STATUS.NONE || scanResult.code == this._scanStatus) {
+    if(this._scanVerbosity == DOMSnitch.Scanner.STATUS.NONE || scanResult.code == this._scanVerbosity) {
       record.code = this._scanner.stringifyStatusCode(scanResult.code);
       record.notes = scanResult.notes;
       this._recordBuff.push(record);
@@ -275,9 +299,8 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     }
   },
   
-  singleExport: function(scanStatus, recordId) {
+  singleExport: function(recordId) {
     this._recordCount = 1;
-    this._scanStatus = scanStatus;
     this._searchFunction = this._parent.storage.selectBy.bind(this._parent.storage, "id", recordId);
     this._startExport()
   }

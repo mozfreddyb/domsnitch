@@ -106,13 +106,29 @@ DOMSnitch.UI.ActivityLog.prototype._handleMenuItemExport = function() {
 }
 
 DOMSnitch.UI.ActivityLog.prototype._handleMenuItemExportAsText = function() {
-  var storageExport = new DOMSnitch.UI.StorageExport(this._parent);
+  var document = this.document;
+  var count = document.getElementsByTagName("tr").length;
+  count = (count - 1) / 2;
+
+  if(count) {
+    var storageExport = new DOMSnitch.UI.StorageExport(this._parent);
+  } else {
+    alert("There are no records in DOM Snitch to export!");
+  }
 }
 
-DOMSnitch.UI.ActivityLog.prototype._handleMenuItemExportToGDocs = function(scanStatus) {
-  var statusBar = new DOMSnitch.UI.StatusBar(this);
-  var gDocsExport = new DOMSnitch.Export.GoogleDocs(this._parent, statusBar);
-  gDocsExport.bulkExport(scanStatus);
+DOMSnitch.UI.ActivityLog.prototype._handleMenuItemExportToGDocs = function(scanVerbosity) {
+  var document = this.document;
+  var count = document.getElementsByTagName("tr").length;
+  count = (count - 1) / 2;
+  
+  if(count) {
+    var statusBar = new DOMSnitch.UI.StatusBar(this);
+    var gDocsExport = new DOMSnitch.Export.GoogleDocs(this._parent, statusBar, scanVerbosity);
+    gDocsExport.bulkExport();
+  } else {
+    alert("There are no records in DOM Snitch to export!");
+  }
 }
 
 DOMSnitch.UI.ActivityLog.prototype._handleMenuItemView = function() {

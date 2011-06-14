@@ -16,7 +16,7 @@
  
 {
   "name": "DOM Snitch",
-  "version": "0.703",
+  "version": "0.704",
   "description": "A passive security proxy inside the DOM (experimental)",
   "background_page": "base.html",
   "permissions": [

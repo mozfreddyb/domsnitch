@@ -16,6 +16,20 @@
 
 DOMSnitch.Modules.Html = function(parent) {
   this._parent = parent;
+  
+  this._targets = {
+    "node.appendChild": {
+      funcName: "appendChild",
+      obj: Node.prototype,
+      origPtr: Node.prototype.appendChild
+    },
+    "node.addEventListener": {
+      funcName: "addEventListener",
+      obj: Node.prototype,
+      origPtr: Node.prototype.addEventListener
+    }
+  };
+  
   this._loaded = false;
 }
 
@@ -23,15 +37,37 @@ DOMSnitch.Modules.Html.prototype = new DOMSnitch.Modules.Base;
 
 DOMSnitch.Modules.Html.prototype._createAddEventListener = function(module, target) {
   return function(eventType, eventListener, useCapture) {
-    target.origPtr.call(target.obj, eventType, module.captureEvents.bind(module, target.obj), false);
-    target.origPtr.call(target.obj, eventType, eventListener, useCapture);
+    if(!this.eventHandlers) {
+      this.eventHandlers = {};
+    }
+    
+    if(!this.eventHandlers[eventType]) {
+      this.eventHandlers[eventType] = [];
+    }
+
+    this.eventHandlers[eventType].push(eventListener);
+    if(module.config["event/all"]) {
+      target.origPtr.call(this, eventType, 
+        module.captureEvents.bind(module, target.obj), false);
+    }
+
+    target.origPtr.call(this, eventType, eventListener, useCapture);
   };
 }
 
 DOMSnitch.Modules.Html.prototype._createAppendChild = function(module, target) {
   return function(child) {
-    module.interceptAttributes(child);
-    return target.origPtr.call(target.obj, child);
+    if(module.config["innerHTML"]) {
+      module.interceptAttributes(child);
+    }
+
+    return target.origPtr.call(this, child);
+  };
+}
+
+DOMSnitch.Modules.Html.prototype._createHrefClickHandler = function(module) {
+  return function(event) {
+    window.location = module.formatUrl(this.href);
   };
 }
 
@@ -47,7 +83,7 @@ DOMSnitch.Modules.Html.prototype._createInnerHtmlGet = function() {
   };
 }
 
-DOMSnitch.Modules.Html.prototype._createInnerHtmlSet = function(module) {
+DOMSnitch.Modules.Html.prototype._createInnerHtmlSet = function(module, appendChild) {
   return function(data) {
     var type = "innerHTML";
     var handler = module.config[type];
@@ -63,9 +99,10 @@ DOMSnitch.Modules.Html.prototype._createInnerHtmlSet = function(module) {
       data = modifiedData ? modifiedData : data;
     }
     
-    var newElem = document.createElement("div");
+    var createElement = Document.prototype.createElement.bind(document);
+    var newElem = createElement("div");
     this.textContent = "";
-    this.targets["appendChild"].origPtr.call(this, newElem);
+    appendChild.call(this, newElem);
     newElem.outerHTML = data;
     
     for(var i = 0; i < this.children.length; i++) {
@@ -137,7 +174,7 @@ DOMSnitch.Modules.Html.prototype.formatUrl = function(url) {
   }
   
   if(url.indexOf("/") == 0) {
-    return window.location.origin + "/" + url;
+    return window.location.origin + url;
   }
   
   var idx = window.location.pathname.lastIndexOf("/");
@@ -151,45 +188,31 @@ DOMSnitch.Modules.Html.prototype.interceptAttributes = function(elem) {
   elem.targets = {
     "href": {obj: elem, propName: "href", isUrl: true},
     "innerHTML": {obj: elem, propName: "innerHTML", isUrl: false},
-    "src": {obj: elem, propName: "src", isUrl: true},
-    "appendChild": {
-      obj: elem, 
-      funcName: "appendChild", 
-      origPtr: elem.appendChild, 
-      capture: false
-    },
-    "addEventListener": {
-      obj: elem, 
-      funcName: "addEventListener", 
-      origPtr: elem.addEventListener, 
-      capture: false
-    }
+    "src": {obj: elem, propName: "src", isUrl: true}
   };
+  
+  if(!elem.eventHandlers) {
+    elem.eventHandlers = {};
+  }
   
   if(elem instanceof HTMLIFrameElement) {
     this._overloadProperty(elem.targets["src"], "iframe.src");
   } else if(elem instanceof HTMLScriptElement) {
     this._overloadProperty(elem.targets["src"], "script.src");
   } else if(elem instanceof HTMLAnchorElement) {
+    if(elem.href != "#") {
+      var addEvtListener = this._targets["node.addEventListener"].origPtr;
+      addEvtListener.call(elem, "click", this._createHrefClickHandler(this));
+    }
     this._overloadProperty(elem.targets["href"], "anchor.href");
-  }  
+  }
   this._overloadProperty(
     elem.targets["innerHTML"], 
     "innerHTML", 
     this._createInnerHtmlGet(), 
-    this._createInnerHtmlSet(this)
+    this._createInnerHtmlSet(this, this._targets["node.appendChild"].origPtr)
   );
-  this._overloadMethod(
-    elem.targets["addEventListener"], 
-    "event/all", 
-    this._createAddEventListener(this, elem.targets["addEventListener"])
-  );
-
-  this._overloadMethod(
-    elem.targets["appendChild"], 
-    "innerHTML", 
-    this._createAppendChild(this, elem.targets["appendChild"])
-  );
+  
 }
 
 DOMSnitch.Modules.Html.prototype.interceptDocument = function() {
@@ -228,6 +251,19 @@ DOMSnitch.Modules.Html.prototype.generateGlobalId = function(elem) {
 DOMSnitch.Modules.Html.prototype.load = function() {
   this.config = this._parent.config;
   
+  this._overloadMethod(
+    "node.addEventListener", 
+    "event/all", 
+    this._createAddEventListener(this, this._targets["node.addEventListener"])
+  );
+
+  this._overloadMethod(
+    "node.appendChild", 
+    "innerHTML", 
+    this._createAppendChild(this, this._targets["node.appendChild"])
+  );
+
+  
   if(document.readyState == "complete") {
     this.interceptDocument();
   } else {
@@ -237,6 +273,10 @@ DOMSnitch.Modules.Html.prototype.load = function() {
 
 DOMSnitch.Modules.Html.prototype.stringifyEvent = function(event) {
   var propStorage = {};
+  
+  //TODO: Remove debug code
+  console.debug(event);
+  console.dir(event.currentTarget);
   
   for(prop in event) {
     if(event[prop] && typeof event[prop] != "function") {

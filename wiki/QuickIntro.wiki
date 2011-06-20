@@ -1,5 +1,5 @@
 #labels Featured
-==DOM Snitch - a passive security proxy inside the DOM==
+==DOM Snitch - a passive reconnaissance tool inside the DOM==
  * Written and maintained by [http://radi.r-n-d.org Radoslav Vasilev] <[mailto:radi@google.com radi@google.com]>
  * Copyright 2011 Google Inc, rights reserved.
  * Released under terms and conditions of the Apache License, version 2.0.

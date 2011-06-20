@@ -45,12 +45,12 @@ DOMSnitch.Modules.Html.prototype._createAddEventListener = function(module, targ
       this.eventHandlers[eventType] = [];
     }
 
-    this.eventHandlers[eventType].push(eventListener);
+    this.eventHandlers[eventType].push({listener: eventListener, capture: useCapture});
     if(module.config["event/all"]) {
       target.origPtr.call(this, eventType, 
         module.captureEvents.bind(module, target.obj), false);
     }
-
+    
     target.origPtr.call(this, eventType, eventListener, useCapture);
   };
 }
@@ -67,7 +67,13 @@ DOMSnitch.Modules.Html.prototype._createAppendChild = function(module, target) {
 
 DOMSnitch.Modules.Html.prototype._createHrefClickHandler = function(module) {
   return function(event) {
-    window.location = module.formatUrl(this.href);
+    if(this.target == "_blank") {
+      //TODO
+    } else if(this.target == "_top") {
+      window.top.location = module.formatUrl(this.href);
+    } else {
+      window.location = module.formatUrl(this.href);
+    }
   };
 }
 
@@ -200,9 +206,10 @@ DOMSnitch.Modules.Html.prototype.interceptAttributes = function(elem) {
   } else if(elem instanceof HTMLScriptElement) {
     this._overloadProperty(elem.targets["src"], "script.src");
   } else if(elem instanceof HTMLAnchorElement) {
-    if(elem.href != "#") {
+    if(elem.href != "#" && !elem.eventHandlers["click"]) {
       var addEvtListener = this._targets["node.addEventListener"].origPtr;
-      addEvtListener.call(elem, "click", this._createHrefClickHandler(this));
+      elem.clickListener = this._createHrefClickHandler(this)
+      addEvtListener.call(elem, "click", elem.clickListener);
     }
     this._overloadProperty(elem.targets["href"], "anchor.href");
   }
@@ -273,10 +280,6 @@ DOMSnitch.Modules.Html.prototype.load = function() {
 
 DOMSnitch.Modules.Html.prototype.stringifyEvent = function(event) {
   var propStorage = {};
-  
-  //TODO: Remove debug code
-  console.debug(event);
-  console.dir(event.currentTarget);
   
   for(prop in event) {
     if(event[prop] && typeof event[prop] != "function") {

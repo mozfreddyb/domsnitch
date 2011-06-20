@@ -145,7 +145,7 @@ DOMSnitch.Scanner.Xss.prototype._checkScriptSource = function(record) {
   }
 
   if(!scriptTldInList) {
-    code = DOMSnitch.Scanner.STATUS.HIGH;
+    code = tldList.length == 1 ? DOMSnitch.Scanner.STATUS.MED : DOMSnitch.Scanner.STATUS.HIGH;
     notes = "Found scripts running from a non-trusted top level domain.\n";
   }
   

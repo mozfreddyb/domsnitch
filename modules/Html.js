@@ -206,11 +206,11 @@ DOMSnitch.Modules.Html.prototype.interceptAttributes = function(elem) {
   } else if(elem instanceof HTMLScriptElement) {
     this._overloadProperty(elem.targets["src"], "script.src");
   } else if(elem instanceof HTMLAnchorElement) {
-    if(elem.href != "#" && !elem.eventHandlers["click"]) {
+    /*if(elem.href != "#" && !elem.eventHandlers["click"]) {
       var addEvtListener = this._targets["node.addEventListener"].origPtr;
       elem.clickListener = this._createHrefClickHandler(this)
       addEvtListener.call(elem, "click", elem.clickListener);
-    }
+    }*/
     this._overloadProperty(elem.targets["href"], "anchor.href");
   }
   this._overloadProperty(

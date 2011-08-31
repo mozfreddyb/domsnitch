@@ -15,7 +15,6 @@ DOM Snitch is an experimental Chrome extension that enables non-security testers
    * Uses of scripts that are not hosted at the application’s domain
    * Uses of scripts that would result in mixed content errors
    * Uses of invalid JSON syntax, resulting in the use of eval() as opposed to a much safer alternative function (e.g. JSON.parse())
-   * Assignments of document.domain to anything but the application’s original hostname value (as given by the browser at rendering time)
  * Ability to export all or subsets of collected data as plain text or through Google Docs
 
 ===Output===

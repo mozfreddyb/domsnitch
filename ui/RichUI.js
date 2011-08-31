@@ -25,6 +25,7 @@ DOMSnitch.UI.RichUI.prototype._build = function() {
   this._setTitle(this._title);
   this._setTopMenu(this._menuItems);
   this._setTitleRow(this._columnTitles);
+  this._showNoIssuesMessage();
 }
   
 DOMSnitch.UI.RichUI.prototype._createDataSectionClickHandler = function(data) {
@@ -41,10 +42,6 @@ DOMSnitch.UI.RichUI.prototype._createDataSectionClickHandler = function(data) {
   };
 }
   
-DOMSnitch.UI.RichUI.prototype._handleHistoryLinkClick = function(recordGid) {
-  var recordViewer = new DOMSnitch.UI.RecordView(this._parent, recordGid);
-}
-
 DOMSnitch.UI.RichUI.prototype._createExportLinkClickHandler = function(viewer, recordId) {
   return function(event) {
     if(!this._exportCursor) {
@@ -84,6 +81,18 @@ DOMSnitch.UI.RichUI.prototype._createRecordBody = function(record, useNesting) {
   
   var recordMenu = this._createHtmlElement("div", "recordMenu", "");
   bodyContent.appendChild(recordMenu);
+  var ignoreList = new DOMSnitch.Scanner.IgnoreList();
+  var gidInIgnoreList = ignoreList.checkGid(record.gid);
+  recordMenu.appendChild(
+    this._createRecordOption(
+      "Execute security checks for similar records", 
+      "Click to " + (gidInIgnoreList ? "enable" : "disable") + " checks for similar records", 
+      this._handleIgnoreLinkClick.bind(this, ignoreList, record.gid),
+      record.id,
+      !gidInIgnoreList
+    )
+  );
+  recordMenu.appendChild(document.createTextNode(" | "));
   if(useNesting) {
     recordMenu.appendChild(
       this._createRecordMenu(
@@ -104,26 +113,35 @@ DOMSnitch.UI.RichUI.prototype._createRecordBody = function(record, useNesting) {
   
   var exportLink = this._createHtmlElement("div");
   
+  if(record.scanInfo && record.scanInfo.notes) {
+    bodyContent.appendChild(
+      this._createSection("Security notes:", record.scanInfo.notes));
+  }
   bodyContent.appendChild(this._createSection("Global ID:", record.gid));
   bodyContent.appendChild(this._createSection("Document URL:", record.documentUrl));
   
-  var dataContent = record.data.length > 0 ? record.data : "[no data was used in this call]";
-  var dataSection = undefined;
+  if(record.callStack.length > 0) {
+    var dataContent = record.data.length > 0 ? record.data : "[no data was used in this call]";
+    var dataSection = undefined;
   
-  if(/%\w{2}/.test(dataContent)) {
-    dataSection = this._createSection(
-      "Data used:", 
-      dataContent, 
-      "Click to decode", 
-      this._createDataSectionClickHandler(dataContent)
-    );
+    if(/%\w{2}/.test(dataContent)) {
+      dataSection = this._createSection(
+        "Data used:", 
+        dataContent, 
+        "Click to decode", 
+        this._createDataSectionClickHandler(dataContent)
+      );
+    } else {
+      dataSection = this._createSection("Data used:", dataContent);
+    }
+
+    bodyContent.appendChild(dataSection);
+    bodyContent.appendChild(
+      this._createSection("Stack trace:", record.callStack, "", null, true));
   } else {
-    dataSection = this._createSection("Data used:", dataContent);
+    var dataContent = record.data.split("\n\n-----\n\n");
+    bodyContent.appendChild(this._createSection("Data used:", dataContent, ""));
   }
-  bodyContent.appendChild(dataSection);
-  
-  bodyContent.appendChild(
-    this._createSection("Stack trace:", record.callStack, "", null, true));
   
   return recordBody;
 }
@@ -132,7 +150,7 @@ DOMSnitch.UI.RichUI.prototype._createRecordHeader = function(record, useNesting)
   var document = this.document;
   var recordId = record.id;
   var recordHeader = document.getElementById("[rr]" + record.gid);
-  var scanResult = this._scanner.check(record);
+  var scanResult = this._scanner.checkOnDisplay(record);
   var cssClass = this._getCssForScanResult(scanResult.code);
   
   if(!recordHeader || !useNesting) {
@@ -146,12 +164,12 @@ DOMSnitch.UI.RichUI.prototype._createRecordHeader = function(record, useNesting)
     recordHeader.onmouseout = this._handleMouseOut.bind(this);
     recordHeader.onclick = this._createRowClickHandler(cssClass);
   } else {
-    if(scanResult.code > recordHeader.code) {
+    if(scanResult.code >= recordHeader.code) {
       recordHeader.className = cssClass;
       recordHeader.code = scanResult.code;
-      recordHeader.notes = scanResult.notes;
+      recordHeader.notes += scanResult.notes;
       recordHeader.onclick = this._createRowClickHandler(cssClass);
-    } else if(recordHeader.code == DOMSnitch.Scanner.STATUS.NONE) {
+    } else if(recordHeader.code <= DOMSnitch.Scanner.STATUS.NONE) {
       recordHeader.className = "recordUpdated";
       recordHeader.onclick = this._createRowClickHandler("recordUpdated");
     }
@@ -167,6 +185,9 @@ DOMSnitch.UI.RichUI.prototype._createRecordHeader = function(record, useNesting)
   recordHeader.appendChild(idCell);
   
   var urlCell = this._createHtmlElement("td", "", record.topLevelUrl.replace(/(.{150})/g, "$1\n"));
+  if(scanResult.code == DOMSnitch.Scanner.STATUS.IGNORED) {
+    urlCell.appendChild(this._createHtmlElement("span", "warning", " (security checks disabled)"));
+  }
   urlCell.title = recordHeader.notes ? recordHeader.notes + "\n" : "";
   urlCell.title += "Document URL:\n";
   urlCell.title += record.documentUrl;
@@ -188,6 +209,25 @@ DOMSnitch.UI.RichUI.prototype._createRecordMenu = function(title, caption, click
   menuItem.addEventListener("click", clickHandler);
 
   return menuItem;
+}
+
+DOMSnitch.UI.RichUI.prototype._createRecordOption = function(title, caption, clickHandler, rowId, checked) {
+  var menuOption = this._createHtmlElement("label", "", title);
+  menuOption.setAttribute("for", "[mo]" + rowId);
+  menuOption.title = caption;
+  menuOption.addEventListener("mouseover", this._handleMouseOver.bind(this), true);
+  menuOption.addEventListener("mouseout", this._handleMouseOut.bind(this), true);
+  menuOption.addEventListener("click", clickHandler, true);
+
+  var checkBox = this._createHtmlElement("input");
+  checkBox.setAttribute("id", "[mo]" + rowId);
+  checkBox.setAttribute("type", "checkbox");
+  if(checked) {
+    checkBox.setAttribute("checked", "");
+  }
+
+  menuOption.appendChild(checkBox);
+  return menuOption;
 }
   
 DOMSnitch.UI.RichUI.prototype._createRowClickHandler = function(className) {
@@ -213,6 +253,12 @@ DOMSnitch.UI.RichUI.prototype._createSection = function(title, content, caption,
   if(isCode && content instanceof Array) {
     for(var i = 0; i < content.length; i++) {
       contentElem.appendChild(this._createCodeSection(content[i]));
+    }
+  } else if(!isCode && content instanceof Array) {
+    for(var i = 0; i < content.length; i++) {
+      var pair = content[i].split("\n");
+      contentElem.appendChild(
+        this._createDataSection(pair[0], pair.slice(1).join("\n")));
     }
   } else {
     contentElem.innerText = content.replace(/(.{200})/g, "$1\n");
@@ -254,6 +300,20 @@ DOMSnitch.UI.RichUI.prototype._createCodeSection = function(frame) {
   return section;
 }
 
+DOMSnitch.UI.RichUI.prototype._createDataSection = function(title, content) {
+  var document = this.document;
+  var section = document.createElement("div");
+
+  section.appendChild(this._createHtmlElement("p", "recordCodeLine", title));
+
+  content = unescape(content).replace(/(.{150})/g, "$1\n");
+  section.appendChild(
+    this._createHtmlElement(
+      "pre", "recordCodeSnippet", content));
+
+  return section;
+}
+
 DOMSnitch.UI.RichUI.prototype._getCssForScanResult = function(statusCode) {
   switch(statusCode) {
     case DOMSnitch.Scanner.STATUS.HIGH:
@@ -267,12 +327,38 @@ DOMSnitch.UI.RichUI.prototype._getCssForScanResult = function(statusCode) {
   }
 }
   
+DOMSnitch.UI.RichUI.prototype._handleHistoryLinkClick = function(recordGid) {
+  var recordViewer = new DOMSnitch.UI.RecordView(this._parent, recordGid);
+}
+
+DOMSnitch.UI.RichUI.prototype._handleIgnoreLinkClick = function(list, recordGid) {
+  if(!list.checkGid(recordGid)) {
+    list.addToList(recordGid);
+  } else {
+    list.removeFromList(recordGid);
+  }
+  
+  this._clear();
+  this._build();
+  this._parent.storage.selectAll("id", "asc", this.displayRecord.bind(this));
+}
+
 DOMSnitch.UI.RichUI.prototype._handleMouseOver = function(event) {
   this.document.body.style.cursor = "pointer";
 }
   
 DOMSnitch.UI.RichUI.prototype._handleMouseOut = function(event) {
   this.document.body.style.cursor = "auto";
+}
+
+DOMSnitch.UI.RichUI.prototype._hideNoIssuesMessage = function() {
+  var noIssuesDiv = this.document.getElementById("noIssues");
+  noIssuesDiv.style.visibility = "hidden";
+}
+
+DOMSnitch.UI.RichUI.prototype._showNoIssuesMessage = function() {
+  var noIssuesDiv = this.document.getElementById("noIssues");
+  noIssuesDiv.style.visibility = "visible";
 }
 
 DOMSnitch.UI.RichUI.prototype.exportRecordAsText = function(recordId) {

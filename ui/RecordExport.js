@@ -64,14 +64,14 @@ DOMSnitch.UI.RecordExport.prototype.displayRecord = function(record) {
     // A conscious decision to never export document.cookie findings
     return;
   }
-  
+
   var document = this.document;
   var contentTable = document.getElementById("contentTable");
   var recordRow = document.createElement("tr");
   var recordBody = document.createElement("td");
   recordBody.id = "recordBody";
   
-  var scanResults = this._scanner.check(record);
+  var scanResults = this._scanner.checkOnDisplay(record);
   scanResults.code = this._scanner.stringifyStatusCode(scanResults.code);
   record.env.cookie = "";
   

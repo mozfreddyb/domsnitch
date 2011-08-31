@@ -15,14 +15,9 @@
  */
 
 DOMSnitch.Scanner.Base = function() {
-  //TODO
 }
 
 DOMSnitch.Scanner.Base.prototype = {
-  _extractCookieData: function(cookie, delim) {
-    //TODO
-  },
-  
   _extractLocation: function(url) {
     var idx = url.indexOf(":");
     var protocol = url.substring(0, idx + 1);

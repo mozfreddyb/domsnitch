@@ -28,25 +28,16 @@ DOMSnitch.Modules.Document = function(parent) {
       funcName: "writeln", 
       origPtr: document.writeln,
       capture: true
-    },
-    "document.createElement": {
-      obj: document, 
-      funcName: "createElement", 
-      origPtr: document.createElement
-    },
-    "document.cookie": {
-      obj: document, 
-      propName: "cookie", 
-      origVal: document.cookie
-    },
-    "document.domain": {
-      obj: document, 
-      propName: "domain", 
-      origVal: document.domain
     }
   };
   
   this._loaded = false;
+  
+  this.htmlElem = document.childNodes[document.childNodes.length - 1];
+  this.beforeDocumentWriteEvt = document.createEvent("Event");
+  this.beforeDocumentWriteEvt.initEvent("BeforeDocumentWrite", true, true);
+  this.documentWriteEvt = document.createEvent("Event");
+  this.documentWriteEvt.initEvent("DocumentWrite", true, true);
 }
 
 DOMSnitch.Modules.Document.prototype = new DOMSnitch.Modules.Base;
@@ -61,47 +52,25 @@ DOMSnitch.Modules.Document.prototype._createElement = function() {
   return elem;
 }
 
-DOMSnitch.Modules.Document.prototype.generateGlobalId = function(type) {
-  // Generate unique, yet reproducible global ID
-  var caller = arguments.callee.caller.caller.toString();
-  var token = caller.length > 50 ? caller.substring(0, 50) : caller;
-  
-  var baseUrl = document.location.origin + document.location.pathname + "#";
-  var gid = baseUrl + type + "/" + token.replace(/\s/gg, "") + "-" + caller.length;
+DOMSnitch.Modules.Document.prototype._createMethod = function(module, type, target, callback) {
+  return function(data) {
+    document.dispatchEvent(module.beforeDocumentWriteEvt);
+    var retVal = target.origPtr.apply(this, arguments);
+    document.dispatchEvent(module.documentWriteEvt);
 
-  return gid;
-}
-
-DOMSnitch.Modules.Document.prototype.getDocumentCookie = function() {
-  return this._targets["document.cookie"].origVal;
+    return retVal;
+  };
 }
 
 DOMSnitch.Modules.Document.prototype.load = function() {
   this.config = this._parent.config;
   
   if(this._loaded) {
-    this.unload();
+    return;
   }
   
-  if(this.config["doc.write"]) {
-    this._overloadMethod("document.write", "doc.write");
-    this._overloadMethod("document.writeln", "doc.write");
-  }
-  
-  if(this.config["innerHTML"]) {
-    var htmlModule = this._parent.modules["Html"];
-    if(htmlModule) {
-      this._overloadMethod("document.createElement", "innerHTML", this._createElement.bind(this));
-    }
-  }
-  
-  if(this.config["doc.cookie"]) {
-    this._overloadProperty("document.cookie", "doc.cookie");
-  }
-  
-  if(this.config["doc.domain"]) {
-    this._overloadProperty("document.domain", "doc.domain");
-  }
+  this._overloadMethod("document.write", "doc.write");
+  this._overloadMethod("document.writeln", "doc.write");
   
   this._loaded = true;
 }

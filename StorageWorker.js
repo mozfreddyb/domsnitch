@@ -62,7 +62,7 @@ DOMSnitch.StorageWorker.prototype = {
     return function(tx) {
       tx.executeSql(
         "insert into activityLog (id, documentUrl, topLevelUrl, type, env, " +
-        "data, callStack, gid, visible) values (?, ?, ?, ?, ?, ?, ?, ?, ?);",
+        "data, callStack, gid, scanInfo) values (?, ?, ?, ?, ?, ?, ?, ?, ?);",
         [
            parseInt(record.id),
            record.documentUrl,
@@ -72,7 +72,7 @@ DOMSnitch.StorageWorker.prototype = {
            record.data, 
            JSON.stringify(record.callStack),
            record.gid,
-           parseInt(record.visible)
+           JSON.stringify(record.scanInfo)
         ],
         null,
         this._error.bind(this)
@@ -97,7 +97,7 @@ DOMSnitch.StorageWorker.prototype = {
               env: JSON.parse(result.env),
               callStack: JSON.parse(result.callStack),
               gid: result.gid,
-              visible: result.visible
+              scanInfo: JSON.parse(result.scanInfo)
             }; 
             
             this._sendToParent(cookie, "result", record);
@@ -125,7 +125,7 @@ DOMSnitch.StorageWorker.prototype = {
               env: JSON.parse(result.env),
               callStack: JSON.parse(result.callStack),
               gid: result.gid,
-              visible: result.visible
+              scanInfo: JSON.parse(result.scanInfo)
             }; 
 
             this._sendToParent(cookie, "result", record);
@@ -140,7 +140,7 @@ DOMSnitch.StorageWorker.prototype = {
     tx.executeSql(
       "create table if not exists activityLog(id integer, documentUrl text," +
       " topLevelUrl text, type text, env text, data text, callStack text," +
-      " gid text, visible integer);",
+      " gid text, scanInfo text);",
       [],
       null,
       this._error.bind(this)

@@ -44,8 +44,14 @@ DOMSnitch.UI.Base.prototype = {
   _createHtmlElement: function(type, className, content) {
     var document = this.document;
     var elem = document.createElement(type);
-    elem.className = className;
-    elem.innerText = content;
+    
+    if(className) {
+      elem.className = className;
+    }
+    
+    if(content) {
+      elem.innerText = content;
+    }
     
     return elem;
   },

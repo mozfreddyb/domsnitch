@@ -38,101 +38,95 @@ DOMSnitch.Modules.XmlHttpRequest = function(parent) {
   };
   
   this._loaded = false;
+  
+  this._htmlElem = document.childNodes[document.childNodes.length - 1];
+  this._xhrEvt = document.createEvent("Event");
+  this._xhrEvt.initEvent("XMLHttpRequest", true, true);
 }
 
 DOMSnitch.Modules.XmlHttpRequest.prototype = new DOMSnitch.Modules.Base;
 
-DOMSnitch.Modules.XmlHttpRequest.prototype._createMethod = function(module, type, target, callback) {
+DOMSnitch.Modules.XmlHttpRequest.prototype._createXhrOpen = function() {
+  var target = this._targets["XMLHttpRequest.open"];
+  var module = this;
   return function() {
-    var args = [].slice.call(arguments);
+    this.addEventListener("readystatechange", 
+      module.handleXhrStateChange.bind(module), true);
+    this.globalId = module.generateGlobalId("XMLHttpRequest");
+    this.requestMethod = arguments[0];
+    this.requestUrl = arguments[1];
+    this.requestHeaders = [];
     
-    if(type == "xhr.open") {
-      this.reqIsAsync = args[2] != undefined ? args[2] : true;
-    }
+    target.origPtr.apply(this, arguments);
+  };
+}
 
-    var handler = module.config[type];
-    if(handler && target.capture) {  
-      var trace = "";
-      try {
-        module.dummyFunctionThatDoesNotExist();
-      } catch(e) {
-        trace = e.stack.toString();
-      }
+DOMSnitch.Modules.XmlHttpRequest.prototype._createXhrSend = function() {
+  var target = this._targets["XMLHttpRequest.send"];
+  return function() {
+    this.requestBody = arguments[0];
+    target.origPtr.apply(this, arguments);
+  };
+}
 
-      var gid = module.generateGlobalId(type);
-      var modifiedArgs = handler(arguments.callee, trace, args.join(" | "), type, gid);
-      args = modifiedArgs ? modifiedArgs.split(" | ") : args;      
-    }
+DOMSnitch.Modules.XmlHttpRequest.prototype._createXhrSetRequestHeader = function() {
+  var target = this._targets["XMLHttpRequest.setRequestHeader"];
+  return function() {
+    var header = arguments[0];
+    var value = arguments[1];
+    this.requestHeaders.push(header + ": " + value);
     
-    var handler = module.config["xhr.recv"];
-    if(handler && this.reqIsAsync) {
-      var _recvTarget = {funcName: "onreadystatechange", obj: this, origPtr: this.onreadystatechange};
-      var _recvGid = module.generateGlobalId("xhr.recv");
-      this.onreadystatechange = function() {
-        if(this.readyState == 4) {
-          var _recvTrace = "";
-          try {
-            module.dummyFunctionThatDoesNotExist();
-          } catch(e) {
-            _recvTrace = e.stack.toString();
-          }
-          
-          handler(arguments.callee, _recvTrace, this.responseText, "xhr.recv", _recvGid);
-        }
-        
-        _recvTarget.origPtr.apply(this, arguments);
-      };
-    }
-    
-    var retVal = target.origPtr.apply(this, args);
-    
-    if(handler && !this.reqIsAsync) {
-      var _recvGid = module.generateGlobalId("xhr.recv");
-      handler(arguments.callee, trace, this.responseText, "xhr.recv", _recvGid);
-    }
-    
-    if(callback) {
-      callback();
-    }
-    
-    return retVal;
+    target.origPtr.apply(this, arguments);
   };
 }
 
 DOMSnitch.Modules.XmlHttpRequest.prototype.generateGlobalId = function(type) {
   // Generate unique, yet reproducible global ID
-  var caller = arguments.callee.caller.caller.toString();
-  var token = caller.length > 50 ? caller.substring(0, 50) : caller;
+  var callerPtr = arguments.callee.caller;
+  
+  var name = "(inline)";
+  if(callerPtr.caller) {
+    var caller = callerPtr.caller.toString();
+    var match = caller.match(/^(function\s+){0,1}(\w*)(\([\w,]*\))/);
+    name = match ? match[0] : name;
+  }
   
   var baseUrl = document.location.origin + document.location.pathname + "#";
-  var gid = baseUrl + type + "/" + token.replace(/\s/gg, "") + "-" + caller.length;
+  var gid = baseUrl + type + "/" + name;
 
   return gid;
+}
+
+DOMSnitch.Modules.XmlHttpRequest.prototype.handleXhrStateChange = function(event) {
+  var xhr = event.target;
+  if(xhr.readyState == 4) {
+    var xhrData = {
+      globalId: xhr.globalId,
+      requestBody: xhr.requestBody,
+      requestHeaders: xhr.requestHeaders.join("\n"),
+      requestMethod: xhr.requestMethod.toUpperCase(),
+      requestUrl: xhr.requestUrl.toString(),
+      responseBody: xhr.responseText,
+      responseHeaders: xhr.getAllResponseHeaders(),
+      responseStatus: xhr.status + " " + xhr.statusText
+    };
+    
+    this._htmlElem.setAttribute("xhrData", this._parent.JSON.stringify(xhrData));
+    document.dispatchEvent(this._xhrEvt);
+  }
 }
 
 DOMSnitch.Modules.XmlHttpRequest.prototype.load = function() {
   this.config = this._parent.config;
   
   if(this._loaded) {
-    this.unload();
+    return;
   }
   
-  if(this.config["xhr.open"]) {
-    this._overloadMethod("XMLHttpRequest.open", "xhr.open");
-  }
-  
-  if(this.config["xhr.send"]) {
-    this._overloadMethod("XMLHttpRequest.send", "xhr.send");
-  }
-
-  if(this.config["xhr.requestHeader"]) {
-    this._overloadMethod("XMLHttpRequest.setRequestHeader", "xhr.requestHeader");
-  }
-
-  if(this.config["xhr.recv"]) {
-    this._overloadMethod("XMLHttpRequest.open", "xhr.open");
-    this._overloadMethod("XMLHttpRequest.send", "xhr.send");
-  }
+  this._overloadMethod("XMLHttpRequest.open", "xhr.open", this._createXhrOpen());
+  this._overloadMethod("XMLHttpRequest.send", "xhr.send", this._createXhrSend());
+  this._overloadMethod("XMLHttpRequest.setRequestHeader",
+    "xhr.requestHeader", this._createXhrSetRequestHeader());
   
   this._loaded = true;
 }

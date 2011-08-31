@@ -15,39 +15,49 @@
  */
 
 DOMSnitch.Scanner = function() {
-  var originScanner = new DOMSnitch.Scanner.Origin;
-  var xssScanner = new DOMSnitch.Scanner.Xss;
-  var mixedContent = new DOMSnitch.Scanner.MixedContent;
-  var jsonScanner = new DOMSnitch.Scanner.Json;
+  var scriptSource = new DOMSnitch.Scanner.ScriptSource;
   
   this._scanners = {
-    "doc.domain": [originScanner],
-    "doc.write": [xssScanner],
-    "innerHTML": [xssScanner],
-    "script.src": [xssScanner, mixedContent],
-    "anchor.href": [xssScanner],
-    "iframe.src": [xssScanner],
-    "win.eval": [jsonScanner]
-  };
+    "Untrusted code": [scriptSource]
+  };  
 }
 
 DOMSnitch.Scanner.prototype = {
-  check: function(record) {
-    var scanners = this._scanners[record.type];
+  checkOnCapture: function(record) {
+    if(record.scanInfo) {
+      return record.scanInfo;
+    }
+    
     var code = DOMSnitch.Scanner.STATUS.NONE;
     var notes = "";
-
+    
+    var scanners = this._scanners[record.type];
     for(var i = 0; scanners && i < scanners.length; i++) {
       if(scanners[i]) {
         var check = scanners[i].check(record);
-        code = code > check.code ? code : check.code;
-        notes += check.notes;
+        if(check) {
+          code = code > check.code ? code : check.code;
+          notes += check.notes;
+        }
       }
     }
-
-    return {code: code, notes: notes};
+    
+    if(notes.length > 0) {
+      return {code: code, notes: notes};
+    } else {
+      return null;
+    }
   },
   
+  checkOnDisplay: function(record) {
+    var ignoreList = new DOMSnitch.Scanner.IgnoreList();
+    if(ignoreList.checkGid(record.gid)) {
+      return {code: DOMSnitch.Scanner.STATUS.IGNORED, notes: ""};
+    }
+    
+    return record.scanInfo;
+  },
+
   stringifyStatusCode: function(status) {
     switch(status) {
       case DOMSnitch.Scanner.STATUS.HIGH:
@@ -66,7 +76,8 @@ DOMSnitch.Scanner.STATUS = {
   HIGH: 3,
   MED: 2,
   LOW: 1,
-  NONE: 0
+  NONE: 0,
+  IGNORED: -1
 }
 
 DOMSnitch.Scanner.MIN_PARAM_LENGTH = 2;

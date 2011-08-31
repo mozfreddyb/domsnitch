@@ -48,7 +48,10 @@ DOMSnitch.UI.StorageExport.prototype.displayRecord = function(record) {
   var contentTable = document.getElementById("contentTable");
   var recordRow = document.createElement("tr");
   
-  var scanResults = this._scanner.check(record);
+  var scanResults = this._scanner.checkOnDisplay(record);
+  if(scanResults.code == DOMSnitch.Scanner.STATUS.IGNORED) {
+    return;
+  }
   scanResults.code = this._scanner.stringifyStatusCode(scanResults.code);
   record.env.cookie = "";
   

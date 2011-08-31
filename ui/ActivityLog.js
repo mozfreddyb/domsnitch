@@ -56,6 +56,7 @@ DOMSnitch.UI.ActivityLog.prototype._getViewTitle = function() {
 DOMSnitch.UI.ActivityLog.prototype._handleMenuItemClear = function() {
   this._parent.storage.deleteAll();
   this._clear();
+  this._showNoIssuesMessage();
 }
 
 DOMSnitch.UI.ActivityLog.prototype._handleMenuItemCollapse = function() {
@@ -158,6 +159,7 @@ DOMSnitch.UI.ActivityLog.prototype.displayRecord = function(record) {
   if(this._window.closed) {
     return;
   }
+  this._hideNoIssuesMessage();
   
   var document = this.document;
   var contentTable = document.getElementById("contentTable");

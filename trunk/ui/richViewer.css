@@ -36,6 +36,17 @@
 #cursor .normal {
 }
 
+#noIssues {
+  color: #ccc;
+  font: 40px Verdana;
+  height: 10%;
+  left: 30%;
+  position: absolute;
+  text-align: center;
+  top: 45%;
+  width: 40%;
+}
+
 #statusBar {
   background: #fad163;
   border: 1px solid #ccc;
@@ -125,6 +136,10 @@ table .riskMedium {
 
 table .riskLow {
   background: #d9f2db;
+}
+
+table .warning {
+  color: #f33;
 }
 
 td {

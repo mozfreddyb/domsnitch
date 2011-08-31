@@ -16,9 +16,10 @@
  
 {
   "name": "DOM Snitch",
-  "version": "0.707",
+  "version": "0.717",
   "description": "A passive reconnaissance tool inside the DOM (experimental)",
   "background_page": "base.html",
+  "options_page": "ui/config/domsnitch.html",
   "permissions": [
     "tabs",
     "contextMenus",
@@ -34,7 +35,13 @@
       ],
       "js": [
         "glue/DOMSnitch.js",
-        "glue/Loader.js" 
+        "glue/Loader.js",
+        "scanner/heuristics/GlobalIdManager.js",
+        "scanner/heuristics/MixedContent.js",
+        "scanner/heuristics/ReflectedInput.js",
+        "scanner/heuristics/ScriptSource.js",
+        "scanner/heuristics/Json.js",
+        "scanner/heuristics/ScriptInclusion.js"
       ],
       "run_at": "document_start",
       "all_frames": true

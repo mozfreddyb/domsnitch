@@ -49,7 +49,7 @@ DOMSnitch.UI.StatusBar.prototype = {
     if(this._statusBar) {
       this.hide();
     }
-    
+
     this._build();
     this._text = text;
     this._statusBar.textContent = this._text;

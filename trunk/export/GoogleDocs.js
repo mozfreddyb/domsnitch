@@ -53,49 +53,31 @@ DOMSnitch.Export.GoogleDocs = function(parent, statusBar, scanVerbosity) {
 }
 
 DOMSnitch.Export.GoogleDocs.prototype = {
-  _createSpreadsheet: function() {
-    var url = "https://docs.google.com/feeds/documents/private/full";
-
-    var body = "<?xml version='1.0' encoding='UTF-8'?>" +
-    		"<entry xmlns=\"http://www.w3.org/2005/Atom\">" +
-    		"<category scheme=\"http://schemas.google.com/g/2005#kind\" " +
-    		"term=\"http://schemas.google.com/docs/2007#spreadsheet\"/>" +
-    		"<title>DOM Snitch: Export {1} @ {0}</title>" +
-    		"</entry>";
-
-    var verbosity = this._scanner.stringifyStatusCode(this._scanVerbosity);
-    if(verbosity.length > 0) {
-      verbosity = "of " + verbosity.toLowerCase() + " ranked records";
-    }
-    body = this._populateXmlString(body, [(new Date).toISOString(), verbosity]);
-    
-    this._makeRequest("post", url, body, 
-      this._createXhrStateChangeHandler(this._processSpreadsheetInfo.bind(this)));
-  },
-  
   _createXhrStateChangeHandler: function(callback) {
     return function() {
       if(this.readyState == 4) {
-        callback(this.responseText);
+        callback(this);
       }
     };
   },
   
-  _displayPrompt: function() {
-    this._statusBar.hide();
-    var promptMsg = "Exporting to Google Docs has finished. " +
-    		"Would you like to open the exported spreadsheet?"; 
-    if(confirm(promptMsg)) {
-      this._parent.skipNextInjection();
-      chrome.tabs.create({url: this._spreadsheetLink});
-    }
+  _csvEscape: function(data) {
+    return data.replace(/"/g, "\"\"");
   },
   
-  _getPostLink: function() {
-    var url = this._worksheetFeed.replace("/worksheets/", "/list/");
-    url = url.replace("/private/full", "/default/private/full");
-    this._makeRequest("get", url, "", 
-      this._createXhrStateChangeHandler(this._processPostInfo.bind(this)));
+  _displayPrompt: function(responseXHR) {
+    var url = "https://docs.google.com/spreadsheet/ccc?key=";
+    var spreadsheetId = responseXHR.getResponseHeader("Location");
+    var idx = spreadsheetId.indexOf("%3A") + 3;
+    spreadsheetId = spreadsheetId.substring(idx);
+
+    this._statusBar.hide();
+    var promptMsg = "Exporting to Google Docs has finished. " +
+        "Would you like to open the exported spreadsheet?"; 
+    if(confirm(promptMsg)) {
+      this._parent.skipNextInjection();
+      chrome.tabs.create({url: url + spreadsheetId});
+    }
   },
   
   _getRecordCount: function(count) {
@@ -109,101 +91,35 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     alert("An error while exporting has occured. Please try again in a few moments.");
   },
   
-  _htmlEncode: function(data) {
-    var buff = [];
-
-    for(var i = 0; i < data.length; i++) {
-      buff.push("&#" + data.charCodeAt(i) + ";");
-    }
-    
-    return buff.join("");
-  },
-
-  _makeRequest: function(method, url, body, callback, etag) {
-    var authz = this._oauth.getAuthorizationHeader(url, method, {"alt": "json"});
+  _makeRequest: function(method, url, body, callback, headers) {
+    var authz = this._oauth.getAuthorizationHeader(url, method, {});
 
     var xhr = new XMLHttpRequest();
-    xhr.open(method, url + "?alt=json", callback ? true : false);
+    xhr.open(method, url, callback ? true : false);
     xhr.onreadystatechange = callback;
-    xhr.setRequestHeader("Content-Type", "application/atom+xml");
-    if(etag) {
-      xhr.setRequestHeader("If-Match", etag);
+    if(headers) {
+      for(var i = 0; i < headers.length; i++) {
+        console.debug(headers[i].key + ": " + headers[i].value);
+        xhr.setRequestHeader(headers[i].key, headers[i].value);
+      }
     }
     xhr.setRequestHeader("Authorization", authz);
-    xhr.setRequestHeader("GData-Version", "2.0");
+    xhr.setRequestHeader("GData-Version", "3.0");
     xhr.send(body);
     
     return callback ? "" : xhr.responseText;
   },
 
   _onAuthorized: function() {
-    this._createSpreadsheet();
+    this._searchFunction(this.exportRecord.bind(this));
   },
   
-  _populateXmlString: function(xmlString, params) {
+  _populateString: function(string, params) {
     for(var i = 0; i < params.length; i++) {
-      xmlString = xmlString.replace(new RegExp("\\{" + i + "\\}", "g"), params[i]);
+      string = string.replace(new RegExp("\\{" + i + "\\}", "g"), params[i]);
     }
     
-    return xmlString;
-  },
-  
-  _processHeaderCell: function(col, responseText) {
-    try {
-      var responseObject = JSON.parse(responseText);
-    } catch (e) {
-      this._handleExportError();
-      return;
-    }
-
-    var etag = responseObject.entry["gd$etag"];
-    this._updateHeaderCell(col, etag);
-  },
-  
-  _processPostInfo: function(responseText) {
-    try {
-      var responseObject = JSON.parse(responseText);
-    } catch (e) {
-      this._handleExportError();
-      return;
-    }
-    
-    for(var i = 0; i < responseObject.feed.link.length; i++) {
-      var link = responseObject.feed.link[i];
-      if(link.rel.indexOf("#feed") > 0) {
-        this._postLink = link.href;
-      }
-    }
-    
-    this._queryHeaderCell(1);
-  },
-  
-  _processSpreadsheetInfo: function(responseText) {
-    try {
-      var responseObject = JSON.parse(responseText);
-    } catch (e) {
-      this._handleExportError();
-      return;
-    }
-
-    for(var i = 0; i < responseObject.entry.link.length; i++) {
-      var link = responseObject.entry.link[i];
-      if(link.rel.indexOf("#worksheetsfeed") > 0) {
-        this._worksheetFeed = link.href;
-      } else if(link.rel == "alternate") {
-        this._spreadsheetLink = link.href;
-      }
-    }
-    
-    this._getPostLink();
-  },
-  
-  _queryHeaderCell: function(col) {
-    var url = this._worksheetFeed.replace("/worksheets/", "/cells/");
-    url = url.replace("/private/full", "/default/private/full/R1C" + col);
-    
-    this._makeRequest("get", url, "", 
-      this._createXhrStateChangeHandler(this._processHeaderCell.bind(this, col)));
+    return string;
   },
   
   _sendRecords: function() {
@@ -211,68 +127,98 @@ DOMSnitch.Export.GoogleDocs.prototype = {
       this._displayPrompt();
       return;
     }
-
-    var record = this._recordBuff.pop();
-    record.env.cookie = "";
-    var body = "<entry xmlns=\"http://www.w3.org/2005/Atom\" " +
-      "xmlns:gsx=\"http://schemas.google.com/spreadsheets/2006/extended\">" +
-      "<gsx:globalid>{0}</gsx:globalid>" +
-      "<gsx:type>{1}</gsx:type>" +
-      "<gsx:page>{2}</gsx:page>" +
-      "<gsx:documenturl>{3}</gsx:documenturl>" +
-      "<gsx:dataused>{4}</gsx:dataused>" +
-      "<gsx:environmentvariables>{5}</gsx:environmentvariables>" +
-      "<gsx:rawcallstack>{6}</gsx:rawcallstack>" +
-      "<gsx:scanresults>Code: {7}\n\nNotes: {8}</gsx:scanresults>" +
-      "</entry>";
     
-    body = this._populateXmlString(
-      body, 
+    console.debug('_sendRecords() called.');
+
+    var url = "https://docs.google.com/feeds/upload/create-session/default/private/full";
+    var verbosity = this._scanner.stringifyStatusCode(this._scanVerbosity);
+    if(verbosity.length > 0) {
+      verbosity = " of " + verbosity.toLowerCase() + " ranked records";
+    }
+    
+    var date = new Date;
+    var title = this._populateString(
+      "DOM Snitch Export{1} at {0}", 
+      ["" + date.getUTCHours() + date.getUTCMinutes() + "GMT", verbosity]
+    );
+    
+    var body = "\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\"\n";
+    body = this._populateString(
+      body,
       [
-        this._htmlEncode(record.gid),
-        record.type,
-        this._htmlEncode(record.topLevelUrl),
-        this._htmlEncode(record.documentUrl),
-        this._htmlEncode(record.data),
-        this._htmlEncode(JSON.stringify(record.env)),
-        this._htmlEncode(JSON.stringify(record.callStack)),
-        record.code,
-        record.notes
+        this._csvEscape("Global ID"),
+        this._csvEscape("Type"),
+        this._csvEscape("Page"),
+        this._csvEscape("Document URL"),
+        this._csvEscape("Data used"),
+        this._csvEscape("Environment variables"),
+        this._csvEscape("Raw call stack"),
+        this._csvEscape("Scan results")
       ]
     );
     
-    this._makeRequest("post", this._postLink, body, 
-      this._createXhrStateChangeHandler(this._sendRecords.bind(this)));
+    for(var i = 0; i < this._recordBuff.length; i++) {
+      var record = this._recordBuff[i];
+      record.env.cookie = "";
+      var entry = "\"{0}\",\"{1}\",\"{2}\"," +
+          "\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\"\n";
+      
+      body += this._populateString(
+        entry, 
+        [
+          this._csvEscape(record.gid),
+          this._csvEscape(record.type),
+          this._csvEscape(record.topLevelUrl),
+          this._csvEscape(record.documentUrl),
+          this._csvEscape(record.data),
+          this._csvEscape(JSON.stringify(record.env)),
+          this._csvEscape(JSON.stringify(record.callStack)),
+          this._csvEscape(record.code + "\n\n" + record.notes)
+        ]
+      );
+    }
+
+    var headers = [
+      {key: "Content-Type", value: "text/csv"},
+      {key: "Slug", value: escape(title)},
+      {key: "X-Upload-Content-Type", value: "text/csv"},
+      {key: "X-Upload-Content-Length", value: body.length}
+    ];
+    
+    this._makeRequest(
+      "post", 
+      url, 
+      "", 
+      this._createXhrStateChangeHandler(this._uploadCsvData.bind(this, body)),
+      headers
+    );
   },
   
+  _uploadCsvData: function(body, responseXHR) {
+    console.debug(responseXHR);
+    var responseHeaders = responseXHR.getAllResponseHeaders();
+    console.debug(responseHeaders);
+    var locationURI = responseXHR.getResponseHeader("Location");
+    
+    console.debug(locationURI);
+    
+    var range = body.length - 1;
+    var headers = [
+      {key: "Content-Type", value: "text/csv"}
+    ];
+    
+    this._makeRequest(
+      "put", 
+      locationURI, 
+      body, 
+      this._createXhrStateChangeHandler(this._displayPrompt.bind(this)),
+      headers
+    );
+  },
+
   _startExport: function() {
     this._statusBar.setText("Exporting to Google Docs");
     this._oauth.authorize(this._onAuthorized.bind(this));
-  },
-  
-  _updateHeaderCell: function(col, etag) {
-    var url = this._worksheetFeed.replace("/worksheets/", "/cells/");
-    url = url.replace("/private/full", "/default/private/full/R1C" + col);
-
-    var body = "<entry xmlns=\"http://www.w3.org/2005/Atom\" " +
-      "xmlns:gs=\"http://schemas.google.com/spreadsheets/2006\">" +
-      "<id>{0}</id>" +
-      "<link rel=\"edit\" type=\"application/atom+xml\" " +
-      "href=\"{0}\"/>" +
-      "<gs:cell row=\"1\" col=\"{1}\" inputValue=\"{2}\"/>" +
-      "</entry>";
-
-    body = this._populateXmlString(body, [url, col, this._colTitles[col - 1]]);
-    
-    var callback = undefined;
-    if(col == this._colTitles.length) {
-      callback = this._searchFunction.bind(this, this.exportRecord.bind(this));
-    } else {
-      callback = this._queryHeaderCell.bind(this, col + 1);
-    }
-    
-    this._makeRequest("put", url, body, 
-      this._createXhrStateChangeHandler(callback), etag);
   },
   
   bulkExport: function() {
@@ -286,7 +232,7 @@ DOMSnitch.Export.GoogleDocs.prototype = {
       // A conscious decision to never export document.cookie findings
       return;
     }
-    var scanResult = this._scanner.check(record);
+    var scanResult = this._scanner.checkOnDisplay(record);
     
     if(this._scanVerbosity == DOMSnitch.Scanner.STATUS.NONE || scanResult.code == this._scanVerbosity) {
       record.code = this._scanner.stringifyStatusCode(scanResult.code);

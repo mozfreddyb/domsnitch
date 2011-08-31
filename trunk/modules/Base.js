@@ -15,7 +15,6 @@
  */
 
 DOMSnitch.Modules.Base = function() {
-  //TODO
 }
 
 DOMSnitch.Modules.Base.prototype = {

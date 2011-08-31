@@ -23,36 +23,6 @@ DOMSnitch.UI.TabManager = function(parent) {
 }
 
 DOMSnitch.UI.TabManager.prototype = {
-  _getConfigFlags: function(mode) {
-    var configFlags = {};
-    var modeFlag = undefined;
-    
-    switch(mode) {
-      case DOMSnitch.UI.TabManager.MODES.Passive:
-        modeFlag = false;
-        break;
-      case DOMSnitch.UI.TabManager.MODES.Invasive:
-        modeFlag = true;
-        break;
-      default:
-        modeFlag = undefined;
-    }
-    
-    if(modeFlag != undefined) {
-      for(option in this._parent.selectedOptions) {
-        configFlags[option] = modeFlag;
-      }
-    }
-    
-    return configFlags;
-  },
-  
-  _processNewTab: function(tab) {
-    this._currentTab = tab.id;
-    this.setMode(tab.id, DOMSnitch.UI.TabManager.MODES.Passive);
-    this.refreshConfig();
-  },
-  
   _updateCurrentTab: function(tabId, selectInfo) {
     this._currentTab = tabId;
   },
@@ -70,24 +40,29 @@ DOMSnitch.UI.TabManager.prototype = {
   },
   
   refreshConfig: function() {
-    for(tab in this._activeTabs) {
+    for(var tab in this._activeTabs) {
       var tabId = window.parseInt(tab);
-      var configFlags = this._getConfigFlags(this.getMode(tabId));
-      chrome.tabs.sendRequest(tabId, {type: "config", data: configFlags});
+      var tabMode = this.getMode(tabId);
+      if(tabMode & DOMSnitch.UI.TabManager.MODES.Passive) {
+        var configFlags = {};
+        for(var option in this._parent.selectedOptions) {
+          configFlags[option] = false;
+        }
+
+        chrome.tabs.sendRequest(tabId, {type: "config", data: configFlags});
+      }
     }
   },
   
   setMode: function(tabId, mode) {
-    if(mode == DOMSnitch.UI.TabManager.MODES.Standby) {
-      delete this._activeTabs[tabId];
-    } else {
-      this._activeTabs[tabId] = mode;
+    if(!(tabId in this._activeTabs)) {
+      this._activeTabs[tabId] = DOMSnitch.UI.TabManager.MODES.Standby;
     }
+    this._activeTabs[tabId] += mode;
   }
 }
 
 DOMSnitch.UI.TabManager.MODES = {
   Standby: 0,
-  Passive: 1,
-  Invasive: 2
+  Passive: 1
 }

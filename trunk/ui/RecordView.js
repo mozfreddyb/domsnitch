@@ -59,6 +59,7 @@ DOMSnitch.UI.RecordView.prototype.displayRecord = function(record) {
   if(this._window.closed) {
     return;
   }
+  this._hideNoIssuesMessage();
   
   var document = this.document;
   var contentTable = document.getElementById("contentTable");

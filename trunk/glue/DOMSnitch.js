@@ -35,7 +35,7 @@ DOMSnitch = function(configData) {
     this._modules[moduleName] = new DOMSnitch.Modules[moduleName](this);
   }
   
-  this._applyConfig(configData);  
+  this._loadModules();  
 }
 
 DOMSnitch.prototype = {

@@ -11,26 +11,16 @@ DOM Snitch works by injecting a series of interceptors, also referred to as “h
 *Important note:* Although we’d like interception to be as transparent as possible to the web application under test, we have to state that DOM Snitch is still in its alpha days and hick-ups may occur.
 
 
-===What can DOM Snitch intercept?===
-The following table describes the list of methods and properties that DOM Snitch intercepts. 
-|| *Name of method/property* || *Capable of recording* || *Capable of modifying* ||
-|| document.write  || Yes                  || Yes ||
-|| document.writeln || Yes || Yes ||
-|| document.cookie (both set and get) || Yes || Yes ||
-|| document.domain (set) || Yes || No ||
-|| Internal DOM events (e.g. onmouseover) || Yes || No ||
-|| Message events that have been triggered by the postMessage API || Yes || No ||
-|| IFrameElement.src || Yes || Yes ||
-|| HTMLElement.innerHTML || Yes || Yes ||
-|| ScriptElement.src || Yes || Yes ||
-|| window.eval || Yes || Yes ||
-|| window.location.hash (both get and set) || Yes || Yes ||
-|| window.setTimeout || Yes || Yes ||
-|| window.setInterval || Yes || Yes ||
-|| XMLHttpRequest.open || Yes || Yes ||
-|| XMLHttpRequest.send || Yes || Yes ||
-|| XMLHttpRequest.responseText || Yes || No ||
-|| XMLHttpRequest.setRequestHeader || Yes || Yes ||
+===What does DOM Snitch intercept?===
+In order to minimize its footprint on the application under test, DOM Snitch only intercepts the following methods.
+|| *Name of method/property* || *Capable of recording* ||
+|| document.write  || Yes                  ||
+|| document.writeln || Yes ||
+|| Message events that have been triggered by the postMessage API || Yes ||
+|| window.eval || Yes ||
+|| XMLHttpRequest.open || Yes ||
+|| XMLHttpRequest.send || Yes ||
+|| XMLHttpRequest.setRequestHeader || Yes ||
 
 
 ===How does DOM Snitch work under the hood?===
@@ -39,34 +29,20 @@ DOM Snitch uses a couple of strategies to intercept methods and properties withi
  * *Prototype hijacking.* Publicly known as prototype hijacking, this technique is identical to the method overloading approach that we use elsewhere. However, the main difference is that the overloading happens at the object’s prototype. This approach is used for the XMLHttpRequest and Storage objects where methods are overloaded at the prototype level.
  * *Defining getters and setters.* Properties in JavaScript are intercepted using the __defineGetter__() and __defineSetter__() methods. Because the original pointers for some properties of the HTML elements cannot be preserved, DOM Snitch uses a substitution technique where data is either set as an attribute to the element or passed through an intermediary HTML element that has been left unmodified and thus able to properly render the given data.
 
+In addition, DOM Snitch relies heavily on various events that get triggered when the DOM changes state.
+
 
 ===How do I operate DOM Snitch?===
-A major goal for DOM Snitch is the simplicity and usefulness of the extension’s UI. To keep things simple, we adopted an approach of controlling the extension’s behavior through a context menu that is embedded in every page where the extension is present while the recorded debug information is presented in a separate tab with a very minimalistic design.
+To start/stop DOM Snitch, click on the "Run DOM Snitch" item in the context menu of any page where DOM Snitch is present. To configure the extension, simply select "Configure…" from the context menu.
 
-
-====The context menu====
-The set of actions performed by DOM Snitch is a combination of the type of activity that needs to be performed (referred to as operational mode) and the locations in the DOM where that activity need to be applied (referred to as modules).
-
-
-DOM Snitch currently supports three modes of operation: passive, invasive, and standby. 
- * *Passive.* By using this mode testers can snoop in on the activities that take place inside the DOM without having the ability to dynamically modify any of the data that is being used. This mode is purely for auditing purposes.
- * *Invasive.* When in this mode, DOM Snitch will stop execution and allow testers to dynamically modify any intercepted data before proceeding with the execution. As a result testers can manipulate the web application to operate in conditions that the application’s developers did not anticipate.
- * *Standby.* This mode unregisters all registered hooks in DOM Snitch. However, this DOES NOT remove all interceptors that DOM Snitch has previously placed inside the page. There are two reasons as to why we’ve opted to only unregister the hooks as opposed to remove all injected code:
-   * Unregistering the hooks reduces the number of operations that need to be executed and therefore improves the performance a slight bit.
-   * Removing the interceptors completely may break the basic functionality of the page. Refreshing the page may result in the page losing state and thus forcing the tester to repeat certain steps before proceeding.
-
-
-The default mode for all tabs that have been opened before DOM Snitch has been enabled is set to *Standby*. The default mode for any new tabs that have been created after DOM Snitch has been enabled is set to *Passive*.
-
-
-Each module that is listed in the context menu corresponds to a location inside the DOM where DOM Snitch has injected a hook. Once a module has been enabled, DOM Snitch will register a handler for the specific hook. The handlers used are determined by the operational mode of the page. By default, DOM Snitch loads with all modules being disabled.
+Note that by default DOM Snitch will monitor all new tabs that are opened after the extension has been enabled. All tabs that have been opened prior to that will remain unmonitored.
 
 
 ===What information can I expect from DOM Snitch?===
-Through the activity log, DOM Snitch provides testers with the visibility of the DOM modifications that pose a security risk or are repeated continuously. An item in the activity log will provide these details:
+Through the activity log, DOM Snitch provides testers with the visibility of the DOM modifications that pose a security risk. An item in the activity log will provide these details:
  * *Document URL.* The URL of the document where the information was recorded.
- * *Stack trace.* A detailed call stack trace containing source URL, arguments, and actual code for each frame.
- * *Data used.* The data with which the final JavaScript call has been made.
+ * *Stack trace.* If applicable, a detailed call stack trace containing source URL, arguments, and actual code for each frame.
+ * *Data used.* Depending on the heuristic that reported the finding, this field will provide any relevant information (e.g. arguments to a JavaScript call, HTTP headers, HTML snippets, etc.) that can help identify if the reported finding is a security issue.
 
 
 Items in the activity log may be highlighted with:

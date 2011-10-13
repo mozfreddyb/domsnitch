@@ -58,7 +58,12 @@ DOMSnitch.UI.TabManager.prototype = {
     if(!(tabId in this._activeTabs)) {
       this._activeTabs[tabId] = DOMSnitch.UI.TabManager.MODES.Standby;
     }
-    this._activeTabs[tabId] += mode;
+
+    if(mode > 0) {
+      this._activeTabs[tabId] |= mode;
+    } else {
+      this._activeTabs[tabId] &= mode;
+    }
   }
 }
 

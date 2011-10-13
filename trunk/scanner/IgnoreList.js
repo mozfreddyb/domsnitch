@@ -18,26 +18,88 @@ DOMSnitch.Scanner.IgnoreList = function() {
 }
 
 DOMSnitch.Scanner.IgnoreList.prototype = {
-  addToList: function(gid) {
-    var ignoreGidBlob = localStorage["ignoreGidBlob"];
-    var ignoreGid = ignoreGidBlob ? JSON.parse(ignoreGidBlob) : {};
+  _checkHttpHeaders: function(rule, record) {
+    var headers = rule.conditions.split(",");
+    for(var i = 0; i < headers.length; i++) {
+      var needle = headers[i];
+      if(needle == "charset") {
+        needle = "character set";
+      }
+      
+      var regex = new RegExp("\\b" + needle + "\\b", "i");
+      if(regex.test(record.scanInfo.notes)) {
+        return true;
+      }
+    }
     
-    ignoreGid[gid] = true;
-    localStorage["ignoreGidBlob"] = JSON.stringify(ignoreGid);
-  },
-
-  checkGid: function(gid) {
-    var ignoredGidBlob = localStorage["ignoreGidBlob"];
-    var ignoredGid = ignoredGidBlob ? JSON.parse(ignoredGidBlob) : {};
-
-    return gid in ignoredGid;
+    return false;
   },
   
-  removeFromList: function(gid) {
-    var ignoreGidBlob = localStorage["ignoreGidBlob"];
-    var ignoreGid = ignoreGidBlob ? JSON.parse(ignoreGidBlob) : {};
+  _checkReflectedInput: function(rule, record) {
+    var term = rule.conditions.match(/term=([\w,]+)/);
+    term = term ? term[1] : term;
+    var source = rule.conditions.match(/source=([\w,]+)/);
+    source = source ? source[1] : source;
+    var sink = rule.conditions.match(/sink=([\w,]+)/);
+    sink = sink ? sink[1] : sink;
     
-    delete ignoreGid[gid];
-    localStorage["ignoreGidBlob"] = JSON.stringify(ignoreGid);
+    var foundTerm = term ? false : true;
+    if(term) {
+      var haystack = record.scanInfo.notes.match(/[\w\s,]+\]\n$/);
+      var terms = term.split(",");
+      for(var i = 0; i < terms.length; i++) {
+        var regex = new RegExp("\\b" + terms[i] + "\\b", "i");
+        if(regex.test(haystack[0])) {
+          foundTerm = true;
+          break;
+        }
+      }
+    }
+
+    var foundSource = source ? false : true;
+    if(source) {
+      var sources = source.split(",");
+      for(var i = 0; i < sources.length; i++) {
+        var regex = new RegExp("^" + sources[i], "i");
+        if(regex.test(record.scanInfo.notes)) {
+          foundSource = true;
+          break;
+        }
+      }
+    }
+    
+    var foundSink = sink ? false : true;
+    if(sink) {
+      var sinks = sink.split(",");
+      for(var i = 0; i < sinks.length; i++) {
+        var regex = new RegExp("displayed " + sinks[i] + "\s\[", "i");
+        if(regex.test(record.scanInfo.notes)) {
+          foundSink = true;
+          break;
+        }
+      }
+    }
+    
+    return foundTerm & foundSource & foundSink;
+  },
+
+  check: function(record) {
+    var rules = JSON.parse(window.localStorage["ds-ignoreRules"]);
+    
+    var ignore = false;
+    for(var i = 0; i < rules.length; i++) {
+      var rule = rules[i];
+      
+      var regex = new RegExp(rule.url, "i");
+      if(record.type == rule.heuristic && regex.test(record.documentUrl)) {
+        if(record.type == "Reflected input") {
+          ignore = ignore | this._checkReflectedInput(rule, record);
+        } else if(record.type == "HTTP headers") {
+          ignore = ignore | this._checkHttpHeaders(rule, record);
+        }
+      }
+    }
+    
+    return ignore;
   }
 }

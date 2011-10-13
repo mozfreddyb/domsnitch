@@ -16,7 +16,7 @@
  
 {
   "name": "DOM Snitch",
-  "version": "0.717",
+  "version": "0.723",
   "description": "A passive reconnaissance tool inside the DOM (experimental)",
   "background_page": "base.html",
   "options_page": "ui/config/domsnitch.html",
@@ -41,7 +41,8 @@
         "scanner/heuristics/ReflectedInput.js",
         "scanner/heuristics/ScriptSource.js",
         "scanner/heuristics/Json.js",
-        "scanner/heuristics/ScriptInclusion.js"
+        "scanner/heuristics/ScriptInclusion.js",
+        "scanner/heuristics/HttpHeaders.js"
       ],
       "run_at": "document_start",
       "all_frames": true

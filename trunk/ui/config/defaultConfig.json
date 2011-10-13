@@ -13,32 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-var configData = {"xhr.open": false};
-
-var snitch = new DOMSnitch(configData);
-
-// Test 1
-try {
-  var xhr = new XMLHttpRequest;
-  console.debug("Test 1: PASSED.");
-} catch (e) {
-  console.error("Test 1: FAILED! " + e.toString());
-}
-
-
-// Test 2
-try {
-  xhr.open("GET", location.pathname);
-  console.debug("Test 2: PASSED.");
-} catch (e) {
-  console.error("Test 2: FAILED! " + e.toString());
-}
-
-// Test 3
-try {
-  xhr.send(null);
-  console.debug("Test 3: PASSED.");
-} catch (e) {
-  console.error("Test 3: FAILED! " + e.toString());
+ 
+ {
+  "profile" : "Default",
+  "components" : ["DOMSnitch"],
+  "scope" : [],
+  "heuristics" : [
+    "HTTP headers",
+    "Invalid JSON",
+    "Mixed content",
+    "Reflected input",
+    "Untrusted code",
+    "Script inclusion"
+  ],
+  "safeOrigins" : [],
+  "ignoreRules" : []
 }

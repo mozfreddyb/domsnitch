@@ -25,11 +25,41 @@ DOMSnitch.ScriptSource.prototype = {
       return;
     }
     
+    var safeOrigins = [
+      location.hostname
+    ];
+
+    // Add the safe origins from crossdomain.xml
+    var xhr = new XMLHttpRequest;
+    xhr.open("GET", location.origin + "/crossdomain.xml", false);
+    xhr.send();
+    
+    var allowAccessDirectives = xhr.responseText.match(/<allow-access-from.*/g);
+    for(var i = 0; allowAccessDirectives && i < allowAccessDirectives.length; i++) {
+      var directive = allowAccessDirectives[i];
+      var origin = /domain=['"]([\w\.\*-]+)['"]/.exec(directive);
+      
+      if(origin) {
+        console.debug("safe origin per crossdomain.xml: " + origin[1].replace(/^\*\./, ""));
+        safeOrigins.push(origin[1].replace(/^\*\./, ""));
+      }
+    }
+    
     var elem = event.target;
     var regex = new RegExp("^((http|https):){0,1}\\/\\/[\\w\\.-]*" +
       location.hostname.replace(".", "\\."), "i");
 
-    if(!elem.src.match(regex)) {
+    var isTrustedSource = false;
+    for(var i = 0; i < safeOrigins.length; i++) {
+      var regex = new RegExp("^((http|https):){0,1}\\/\\/[\\w\\.-]*" +
+        safeOrigins[i].replace(".", "\\."), "i");
+      if(elem.src.match(regex)) {
+        isTrustedSource = true;
+        break;
+      }
+    }
+
+    if(!isTrustedSource) {
       console.debug(event.url);
       var data = "URL:\n" + event.url;
       data += "\n\n-----\n\n";
@@ -46,7 +76,7 @@ DOMSnitch.ScriptSource.prototype = {
           referrer: document.referrer
         }
       };
-            
+
       this._report(record);
     }
   },
@@ -81,7 +111,7 @@ DOMSnitch.ScriptSource.prototype = {
           referrer: document.referrer
         }
       };
-            
+
       this._report(record);
     }
   },

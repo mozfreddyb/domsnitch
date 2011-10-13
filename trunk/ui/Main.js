@@ -15,38 +15,28 @@
  */
 
 DOMSnitch.UI.Main = function() {
-  this._inject = true;
-  this._noInjectList = {};
+  this._registeredHeuristics = [];
   this._storage = new DOMSnitch.Storage(this);
+  this._configManager = new DOMSnitch.UI.ConfigManager(this);
   this._tabManager = new DOMSnitch.UI.TabManager(this);
   this._contextMenu = new DOMSnitch.UI.ContextMenu(this);
   this._activityLog = new DOMSnitch.UI.ActivityLog(this);
   this._scanner = new DOMSnitch.Scanner();
-  chrome.extension.onRequest.addListener(this._handleConfigRequest.bind(this));
   chrome.extension.onRequest.addListener(this._handleRecordCapture.bind(this));
-  chrome.extension.onRequest.addListener(this._handlePingPong.bind(this));
-  chrome.tabs.onCreated.addListener(this._handleNewTab.bind(this));
+  chrome.tabs.onUpdated.addListener(this._handleUpdatedTab.bind(this));
   
-  var optionsConfigStr = window.localStorage["ds-opt-config"];
-  if(optionsConfigStr && optionsConfigStr.length > 0) {
-    this._optionsConfig = JSON.parse(optionsConfigStr);
-  } else {
-    this._optionsConfig = this.setDefaultOptionsConfig();
-  }
-  
-  var scope = window.localStorage["ds-scope"];
-  if(!scope || scope.length == 0) {
-    window.localStorage["ds-scope"] = JSON.stringify([]);
-  }
-  
-  var safeOrigins = window.localStorage["ds-origins"];
-  if(!safeOrigins || safeOrigins.length == 0) {
-    window.localStorage["ds-origins"] = JSON.stringify([]);
-  }
-
+  this._configManager.applyConfig();
 }
 
 DOMSnitch.UI.Main.prototype = {
+  get configManager() {
+    return this._configManager;
+  },
+  
+  get registeredHeuristics() {
+    return this._registeredHeuristics;
+  },
+
   get selectedOptions() {
     var selectedOptions = {};
     for(option in this._optionsConfig) {
@@ -69,52 +59,6 @@ DOMSnitch.UI.Main.prototype = {
   
   get tabManager() {
     return this._tabManager;
-  },
-  
-  _fetchModule: function(moduleSource) {
-    var url = chrome.extension.getURL(moduleSource);
-    var xhr = new XMLHttpRequest;
-    xhr.open("GET", url, false);
-    xhr.send(null);
-    
-    return window.JSON.stringify(xhr.responseText);
-  },
-  
-  _handleConfigRequest: function(request, sender, sendResponse) {
-    if(request.type != "config") {
-      return;
-    }
-
-    var tabMode = this._tabManager.getMode(sender.tab.id);
-    if(tabMode & DOMSnitch.UI.TabManager.MODES.Passive) {
-      var configData = this.selectedOptions;
-      var modules = request.modules;
-      var inject = sender.tab.id in this._noInjectList ? false : this._inject;
-      if(!this._inject) {
-        this._inject = true;
-        this._noInjectList[sender.tab.id] = false;
-      }
-        
-      for(moduleName in modules) {
-        var module = modules[moduleName]; 
-        module.code = this._fetchModule(module.src);
-      }
-        
-      sendResponse({
-        type: "config", 
-        data: window.JSON.stringify(configData), 
-        modules: modules,
-        inject: inject
-      });
-    } else {
-      sendResponse({type: "config", inject: false});
-    }
-  },
-  
-  _handleNewTab: function(tab) {
-    //TODO(radi): Determine if it's reasonable to enable DOM Snitch by default in
-    //newly opened windows
-    this._tabManager.setMode(tab.id, DOMSnitch.UI.TabManager.MODES.Passive);
   },
   
   _handleRecordCapture: function(request, sender, sendResponse) {
@@ -149,9 +93,7 @@ DOMSnitch.UI.Main.prototype = {
       }
     }
     
-    var inScope = record.type in this.selectedOptions;
-    
-    if(inScope && this._isInScope(sender.tab.url)) {
+    if(this._configManager.isInScope(sender.tab.url, record.type, false)) {
       record.scanInfo = this._scanner.checkOnCapture(record);
       
       if(record.scanInfo) {
@@ -161,46 +103,11 @@ DOMSnitch.UI.Main.prototype = {
     }
   },
   
-  _handlePingPong: function(request, sender, sendResponse) {
-    if(request.type != "pingPong") {
-      return;
+  _handleUpdatedTab: function(tabId, selectInfo) {
+    if(this._configManager.defaultMode != undefined) {
+      this._tabManager.setMode(tabId, this._configManager.defaultMode);
+      this._contextMenu.updateMenuForTab(tabId, selectInfo);
     }
-    
-    sendResponse(DOMSnitch.UI.TabManager.MODES.Standby != this._tabManager.getMode(sender.tab.id));
-  },
-  
-  _isInScope: function(url) {
-    var scope = JSON.parse(window.localStorage["ds-scope"]);
-    
-    if(scope.length == 0) {
-      return true;
-    }
-    
-    for(var i = 0; i < scope.length; i++) {
-      var regexStr = scope[i];
-      regexStr = regexStr.replace(/\\/g, "\\\\");
-      regexStr = regexStr.replace(/\*/g, ".*");
-      var regex = new RegExp("^" + regexStr + "$", "i");
-      if(regex.test(url)) {
-        return true;
-      }
-    }
-    
-    return false;
-  },
-  
-  setDefaultOptionsConfig: function() {
-    var availOptions = {
-      "Invalid JSON": 1,
-      "Mixed content": 1,
-      "Reflected input": 1,
-      "Untrusted code": 1,
-      "Script Inclusion": 1
-    };
-    
-    window.localStorage["ds-opt-config"] = JSON.stringify(availOptions);
-    
-    return availOptions;
   },
   
   showActivityLog: function() {
@@ -210,9 +117,5 @@ DOMSnitch.UI.Main.prototype = {
   
   showConfigPage: function() {
     chrome.tabs.create({url: "ui/config/domsnitch.html"});
-  },
-  
-  skipNextInjection: function() {
-    this._inject = false;
   }
 }

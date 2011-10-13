@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-var configData = {"innerHTML": false};
-
-var snitch = new DOMSnitch(configData);
-
-// Test 1
-try {
-  var div = document.createElement("div");
-  if(!div) {
-    console.error("Test 1: FAILED! Unable to create new HTML element: " + div);
-  } else {
-    console.debug("Test 1: PASSED.");
-  }
-} catch (e) {
-  console.error("Test 1: FAILED! " + e.toString());
+DOMSnitch.TestModule = function(testsUrl) {
+  this._tests = [];
+  this._modName = testsUrl;
+  this._url = chrome.extension.getURL("tests/" + testsUrl + ".js");
 }
 
-
-// Test 2
-try {
-  document.body.appendChild(div);
-  div.innerHTML = "<b>te<i>st</i></b>";
+DOMSnitch.TestModule.prototype = {
+  get name() {
+    return this._modName;
+  },
   
-  console.debug("Test 2: PASSED.");
-} catch (e) {
-  console.error("Test 2: FAILED! " + e.toString());
+  run: function() {
+    try {
+      var xhr = new XMLHttpRequest;
+      xhr.open("get", this._url, false);
+      xhr.send();
+
+      modName = this._modName;
+      eval(xhr.responseText);
+    } catch (e) {
+      if(e.stack) {
+        console.debug(e.stack);
+      }
+      assertTrue(this._modName, "Missing tests", false);
+    }
+  }
 }

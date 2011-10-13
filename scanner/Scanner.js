@@ -24,6 +24,12 @@ DOMSnitch.Scanner = function() {
 
 DOMSnitch.Scanner.prototype = {
   checkOnCapture: function(record) {
+    // Check that we don't have an ignore rule for this finding.
+    var ignoreList = new DOMSnitch.Scanner.IgnoreList();
+    if(ignoreList.check(record)) {
+      return null;
+    }
+    
     if(record.scanInfo) {
       return record.scanInfo;
     }
@@ -51,7 +57,7 @@ DOMSnitch.Scanner.prototype = {
   
   checkOnDisplay: function(record) {
     var ignoreList = new DOMSnitch.Scanner.IgnoreList();
-    if(ignoreList.checkGid(record.gid)) {
+    if(ignoreList.check(record)) {
       return {code: DOMSnitch.Scanner.STATUS.IGNORED, notes: ""};
     }
     

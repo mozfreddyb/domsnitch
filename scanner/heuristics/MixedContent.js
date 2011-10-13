@@ -51,14 +51,23 @@ DOMSnitch.MixedContent.prototype = {
       var article = elem.match(/^[euioa]/) ? "an" : "a";
       
       var attr = "";
+      var found = false;
       for(attr in event.target) {
-        if(event.url == event.target[attr]) {
+        var attrValue = event.target[attr];
+
+        if(attrValue instanceof DOMStringMap) {
+          continue;
+        }
+
+        if(event.target[attr] == event.url) {
+          found = true;
           break;
         }
       }
       
-      var notes = "Mixed content through the " + attr.toUpperCase() +
-        " attribute of " + article + " " + elem.toUpperCase() + " element.\n";
+      var source = found ? "the " + attr.toUpperCase() + " attribute" : "a child element";
+      var notes = "Mixed content through the " + source +" of " + article + 
+        " " + elem.toUpperCase() + " element.\n";
       
       var data = "URL:\n" + event.url;
       data += "\n\n-----\n\n";

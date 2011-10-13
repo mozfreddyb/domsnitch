@@ -71,7 +71,7 @@ DOMSnitch.Modules.Document.prototype.load = function() {
   
   this._overloadMethod("document.write", "doc.write");
   this._overloadMethod("document.writeln", "doc.write");
-  
+
   this._loaded = true;
 }
 

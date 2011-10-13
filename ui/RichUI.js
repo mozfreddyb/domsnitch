@@ -81,18 +81,6 @@ DOMSnitch.UI.RichUI.prototype._createRecordBody = function(record, useNesting) {
   
   var recordMenu = this._createHtmlElement("div", "recordMenu", "");
   bodyContent.appendChild(recordMenu);
-  var ignoreList = new DOMSnitch.Scanner.IgnoreList();
-  var gidInIgnoreList = ignoreList.checkGid(record.gid);
-  recordMenu.appendChild(
-    this._createRecordOption(
-      "Execute security checks for similar records", 
-      "Click to " + (gidInIgnoreList ? "enable" : "disable") + " checks for similar records", 
-      this._handleIgnoreLinkClick.bind(this, ignoreList, record.gid),
-      record.id,
-      !gidInIgnoreList
-    )
-  );
-  recordMenu.appendChild(document.createTextNode(" | "));
   if(useNesting) {
     recordMenu.appendChild(
       this._createRecordMenu(
@@ -119,30 +107,12 @@ DOMSnitch.UI.RichUI.prototype._createRecordBody = function(record, useNesting) {
   }
   bodyContent.appendChild(this._createSection("Global ID:", record.gid));
   bodyContent.appendChild(this._createSection("Document URL:", record.documentUrl));
-  
-  if(record.callStack.length > 0) {
-    var dataContent = record.data.length > 0 ? record.data : "[no data was used in this call]";
-    var dataSection = undefined;
-  
-    if(/%\w{2}/.test(dataContent)) {
-      dataSection = this._createSection(
-        "Data used:", 
-        dataContent, 
-        "Click to decode", 
-        this._createDataSectionClickHandler(dataContent)
-      );
-    } else {
-      dataSection = this._createSection("Data used:", dataContent);
-    }
 
-    bodyContent.appendChild(dataSection);
-    bodyContent.appendChild(
-      this._createSection("Stack trace:", record.callStack, "", null, true));
-  } else {
-    var dataContent = record.data.split("\n\n-----\n\n");
-    bodyContent.appendChild(this._createSection("Data used:", dataContent, ""));
-  }
-  
+  var dataContent = record.data.split("\n\n-----\n\n");
+  bodyContent.appendChild(this._createSection("Data used:", dataContent, ""));
+  bodyContent.appendChild(
+    this._createSection("Stack trace:", record.callStack, "", null, true));
+
   return recordBody;
 }
   
@@ -185,9 +155,6 @@ DOMSnitch.UI.RichUI.prototype._createRecordHeader = function(record, useNesting)
   recordHeader.appendChild(idCell);
   
   var urlCell = this._createHtmlElement("td", "", record.topLevelUrl.replace(/(.{150})/g, "$1\n"));
-  if(scanResult.code == DOMSnitch.Scanner.STATUS.IGNORED) {
-    urlCell.appendChild(this._createHtmlElement("span", "warning", " (security checks disabled)"));
-  }
   urlCell.title = recordHeader.notes ? recordHeader.notes + "\n" : "";
   urlCell.title += "Document URL:\n";
   urlCell.title += record.documentUrl;
@@ -283,8 +250,10 @@ DOMSnitch.UI.RichUI.prototype._createCodeSection = function(frame) {
   var section = document.createElement("div");
   
   section.appendChild(
-    this._createHtmlElement("p", "recordCodeLine", frame.src.replace(/(.{150})/g, "$1\n")));
+    this._createHtmlElement(
+      "p", "recordCodeLine", frame.src.replace(/(.{150})/g, "$1\n")));
  
+  /*
   var argList = frame.data.split(" | ");
   var args = "";
   for(var i = 0; i < argList.length; i++) {
@@ -293,9 +262,13 @@ DOMSnitch.UI.RichUI.prototype._createCodeSection = function(frame) {
   
   section.appendChild(
     this._createHtmlElement("pre", "recordCodeSnippet", "Arguments:\n" + args));
+  */
   
-  section.appendChild(
-    this._createHtmlElement("pre", "recordCodeSnippet", frame.code.replace(/(.{150})/g, "$1\n")));
+  if(frame.code.length > 0) {
+    section.appendChild(
+      this._createHtmlElement(
+        "pre", "recordCodeSnippet", frame.code.replace(/(.{150})/g, "$1\n")));
+  }
   
   return section;
 }
@@ -329,18 +302,6 @@ DOMSnitch.UI.RichUI.prototype._getCssForScanResult = function(statusCode) {
   
 DOMSnitch.UI.RichUI.prototype._handleHistoryLinkClick = function(recordGid) {
   var recordViewer = new DOMSnitch.UI.RecordView(this._parent, recordGid);
-}
-
-DOMSnitch.UI.RichUI.prototype._handleIgnoreLinkClick = function(list, recordGid) {
-  if(!list.checkGid(recordGid)) {
-    list.addToList(recordGid);
-  } else {
-    list.removeFromList(recordGid);
-  }
-  
-  this._clear();
-  this._build();
-  this._parent.storage.selectAll("id", "asc", this.displayRecord.bind(this));
 }
 
 DOMSnitch.UI.RichUI.prototype._handleMouseOver = function(event) {

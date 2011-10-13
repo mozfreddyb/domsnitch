@@ -30,9 +30,9 @@ DOMSnitch.ReflectedInput = function() {
   window.addEventListener("message", this._captureMessageEvents.bind(this), true);
   
   this._unescapedSearchData = unescape(location.search);
-  this._unescapedReferrerData = unescape(document.referrer);
+  this._unescapedReferrerData = unescape(document.referrer).replace(location.hostname, "");
   this._tokenizedSearchData = this._tokenizeHaystack(location.search);
-  this._tokenizedReferrerData = this._tokenizeHaystack(document.referrer.replace(location.origin, ""));
+  this._tokenizedReferrerData = this._tokenizeHaystack(document.referrer.replace(location.hostname, ""));
 }
 
 DOMSnitch.ReflectedInput.prototype = {
@@ -67,9 +67,8 @@ DOMSnitch.ReflectedInput.prototype = {
       },
       scanInfo: {code: code, notes: notes}
     };
-                
-    this._report(record);
 
+    this._report(record);
   },
   
   _captureMessageEvents: function(event) {
@@ -87,11 +86,11 @@ DOMSnitch.ReflectedInput.prototype = {
     // A hack to preserve the value of document.all
     var allElements = [].concat(document.all);
     for(var i = 0; i < allElements[0].length; i++) {
-      this._checkElem(allElements[0][i], "doc.write");
+      this._checkElem(allElements[0][i]);
     }
   },
   
-  _checkElem: function(elem, type) {
+  _checkElem: function(elem) {
     var type = this._type;
     var attributes = [];
     for(var i = 0; i < elem.attributes.length; i++) {
@@ -125,7 +124,12 @@ DOMSnitch.ReflectedInput.prototype = {
         window.setTimeout(
           this._checkParams.bind(
             this, 
-            {source: haystack.name, sink: "attribute", type: type, elem: elem},
+            {
+              source: haystack.name, 
+              sink: "attribute", 
+              type: type, 
+              elem: elem
+            },
             haystack.data,
             attributes
           ), 
@@ -154,7 +158,12 @@ DOMSnitch.ReflectedInput.prototype = {
         window.setTimeout(
           this._checkParams.bind(
             this, 
-            {source: haystack.name, sink: "innerHTML", type: type, elem: elem},
+            {
+              source: haystack.name, 
+              sink: "innerHTML", 
+              type: type, 
+              elem: elem
+            },
             haystack.data,
             tokens,
             true
@@ -169,7 +178,7 @@ DOMSnitch.ReflectedInput.prototype = {
     if(event.target instanceof HTMLElement) {
       var elem = event.target;
       
-      this._checkElem(elem, "innerHTML");
+      this._checkElem(elem);
     }
   },
   
@@ -193,14 +202,7 @@ DOMSnitch.ReflectedInput.prototype = {
           i--;
         }
       }
-      foundValues = this._findOverlap(haystack, params, true);
-      if(recordInfo.source == "Post message" && foundValues.length < 2) {
-        if(!/[A-Z0-9]/.test(foundValues)) {
-          // We need either a sequence of at least 2 words or a genuinely
-          // interesting term to match
-          foundValues = [];
-        }
-      }
+      foundValues = this._findOverlap(params, haystack, true);
     } else {
       for(var i = 0; i < params.length; i++) {
         var value = params[i];
@@ -254,7 +256,12 @@ DOMSnitch.ReflectedInput.prototype = {
         window.setTimeout(
           this._checkParams.bind(
             this, 
-            {source: haystack.name, sink: "text", type: this._type, elem: elem},
+            {
+              source: haystack.name, 
+              sink: "text", 
+              type: this._type, 
+              elem: elem
+            },
             haystack.data,
             tokens,
             true
@@ -293,16 +300,17 @@ DOMSnitch.ReflectedInput.prototype = {
     }
     
     var overlap = [];
-    for(var i = 0, j = 0; i < listA.length && j < listB.length; i++, j++) {
-      if(listA[i] == listB[j]) {
+    var listBStr = listB.join(" ");
+    for(var i = 0; i < listA.length; i++) {
+      if(parseInt(listA[i])) {
+        continue;
+      }
+      var regex = new RegExp("\\b" + listA[i] + "\\b");
+      if(regex.test(listBStr)) {
         overlap.push(listA[i]);
-      } else if(listA[i] > listB[j]) {
-        i--;
-      } else {
-        j--;
       }
     }
-    
+       
     return overlap;
   },
   
@@ -343,7 +351,7 @@ DOMSnitch.ReflectedInput.prototype = {
   },
   
   _tokenizeHaystack: function(haystack) {
-    return (unescape(haystack)).match(/\w+={0,1}/g);
+    return (unescape(haystack)).match(/\w+/g);
   }
 }
 

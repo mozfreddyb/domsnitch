@@ -56,7 +56,8 @@ DOMSnitch.UI.RecordView.prototype._handleMenuItemExpand = function() {
 }
 
 DOMSnitch.UI.RecordView.prototype.displayRecord = function(record) {
-  if(this._window.closed) {
+  var scanResult = this._scanner.checkOnDisplay(record);
+  if(this._window.closed || scanResult.code == DOMSnitch.Scanner.STATUS.IGNORED) {
     return;
   }
   this._hideNoIssuesMessage();

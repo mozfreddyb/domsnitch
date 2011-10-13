@@ -79,15 +79,15 @@ DOMSnitch.Storage.prototype = {
     var cookie = this._cookie++;
     this._callbackMap[cookie] = callback;
     this._worker.postMessage(
-      JSON.stringify({type: "query", colId: colId, order: order, cookie: cookie})
-    );
+      JSON.stringify(
+        {type: "query", colId: colId, order: order, cookie: cookie}));
   },
   
   selectBy: function(key, value, callback) {
     var cookie = this._cookie++;
     this._callbackMap[cookie] = callback;
     this._worker.postMessage(
-      JSON.stringify({type: "queryBy", key: key, value: value, cookie: cookie})
-    );
+      JSON.stringify(
+        {type: "queryBy", key: key, value: value, cookie: cookie}));
   }
 }

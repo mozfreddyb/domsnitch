@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!--
+ * Copyright 2011 Google Inc. All Rights Reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *  
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+-->
+<html>
+  <head>
+    <title></title>
+    <link rel="stylesheet" type="text/css" href="config.css" />
+    <script src="menu.js"></script>
+    <script src="domsnitch.js"></script>
+  </head>
+  <body>
+    <div id="navbar"></div>
+    <div id="main">
+      <div id="page-title"></div>
+      <div id="opt-section" class="section-block">
+        <div id="opt-title" class="section-title">Enabled Heuristics</div>
+        <div id="opt-content" class="section-content">
+          <div id="opt-items"></div>
+          <button id="opt-enableAll">Enable all</button>
+          <button id="opt-disableAll">Disable all</button>
+        </div>
+      </div>
+      <div id="opt-scope" class="section-block">
+        <div id="opt-scopeTitle" class="section-title">Scope</div>
+        <div id="opt-scopeContent" class="section-content">
+          <textarea rows="10" cols="50"></textarea>
+          <br/>Use this text area to specify the regular expressions (one per line) that
+          <br/>describe the scope (URLs) of your testing (e.g. *.example.com). If left
+          <br/>empty, a catch all rule will be applied.
+          <br/>
+          <br/>
+          <div>
+            <button id="saveScopeButton">Save</button>
+          </div>
+        </div>
+      </div>
+      <div id="opt-origins" class="section-block">
+        <div id="opt-originsTitle" class="section-title">Trusted Origins</div>
+        <div id="opt-originsContent" class="section-content">
+          <textarea rows="10" cols="50"></textarea>
+          <br/>Use this text area to specify the origins/TLDs from which it is safe to
+          <br/>load JavaScript code into your product (e.g. example.com). Separate 
+          <br/>multiple entries with a new line.
+          <br/>
+          <br/>
+          <input type="checkbox" id="opt-origins-applyToFlash" />
+          <label for="opt-origins-applyToFlash">Apply the trusted origin settings to Flash movies. (Not recommended)</label>
+          <br/>
+          <br/>
+          <div>
+            <button id="saveOriginsButton">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

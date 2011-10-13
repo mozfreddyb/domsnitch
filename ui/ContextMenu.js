@@ -23,7 +23,7 @@ DOMSnitch.UI.ContextMenu = function(parent) {
   
   this._build();
   
-  chrome.tabs.onSelectionChanged.addListener(this._updateMenuForTab.bind(this));
+  chrome.tabs.onSelectionChanged.addListener(this.updateMenuForTab.bind(this));
 }
 
 DOMSnitch.UI.ContextMenu.prototype = {
@@ -59,6 +59,8 @@ DOMSnitch.UI.ContextMenu.prototype = {
     var mode = this._modeMap[info.menuItemId];
     this._parent.tabManager.setMode(tab.id, info.checked ? mode : mode * -1);
     this._parent.tabManager.refreshConfig();
+
+    this._parent.configManager.defaultMode = undefined;
   },
   
   _showActivityLog: function(info, tab) {
@@ -69,7 +71,7 @@ DOMSnitch.UI.ContextMenu.prototype = {
     this._parent.showConfigPage();
   },
   
-  _updateMenuForTab: function(tabId, selectInfo) {
+  updateMenuForTab: function(tabId, selectInfo) {
     var mode = this._parent.tabManager.getMode(tabId);
 
     for(var menuItem in this._modeMap) {

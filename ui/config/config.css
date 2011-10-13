@@ -1,0 +1,127 @@
+/**
+ * Copyright 2011 Google Inc. All Rights Reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *  
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ 
+#main {
+  padding: 0px 10px 0px 10px;
+  top: 0px;
+}
+
+#navbar {
+  background: #fafafa; 
+  border-right: 1px #ccc solid;
+  left: 0px;
+  position: fixed;
+  height: 100%;
+  top: 0px;
+  width: 250px;
+  float: left;
+  z-index: 2;
+  
+}
+
+#navbar div {
+  padding: 10px 10px 10px 10px;
+}
+
+#page-title {
+  padding: 10px 10px 10px 10px;
+  font-size: 150%;
+  font-weight: bold;
+}
+
+.dialog-block {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px 10px 5px 10px;
+  position: absolute;
+  width: 470px;
+  z-index: 10;
+  -webkit-box-shadow: 2px 2px 5px #eee;
+}
+
+.dialog-block button {
+  right: 0px;
+}
+
+.dialog-content td {
+  padding: 3px 3px 3px 3px;
+  vertical-align: top;
+}
+
+.dialog-title {
+  font-weight: bold;
+  padding-bottom: 10px;
+}
+
+.highlight {
+  background: #e3e9ff;
+  border-bottom: 1px #68e solid;
+  border-top: 1px #68e solid;
+}
+
+.section-block {
+  border: 1px #d5d5d5 solid;
+  border-radius: 10px;
+  padding: 0px 15px 5px 15px;
+  margin-bottom: 10px;
+}
+
+.section-block div {
+  display: table-cell;
+}
+
+.section-content p {
+  display: inline;
+  float: left;
+  width: 200px;
+}
+
+.section-content table {
+  border-collapse: collapse;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.section-content table td {
+  border-bottom: 1px solid #ccc;
+  padding: 5px 10px 5px 10px;
+}
+
+
+.section-title {
+  font-weight: bold;
+  padding-top: 10px;
+  vertical-align: top;
+  width: 150px;
+}
+
+body {
+  color: #222;
+  display: block;
+  font: 12px Verdana;
+  margin: 0px;
+  padding-left:255px;
+}
+
+button {
+  color: #333;
+  margin: 5px 15px 5px 15px;
+}
+
+textarea {
+  margin-top: 10px;
+}

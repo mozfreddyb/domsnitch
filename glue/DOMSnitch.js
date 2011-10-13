@@ -167,6 +167,6 @@ DOMSnitch.COMM_STR = {
   "e-page2ext" : "ds-e-page2ext",
   "d-ext2page" : "ds-d-ext2page",
   "e-ext2page" : "ds-e-ext2page"
-}
+};
 
 DOMSnitch.Modules = {};

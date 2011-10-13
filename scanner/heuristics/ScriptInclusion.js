@@ -88,7 +88,7 @@ DOMSnitch.ScriptInclusion.prototype = {
       } else {
         notes = "JSON served with wrong Content-Disposition header [value: " + contentDisposition + "].\n";
       }
-      
+
       window.setTimeout(this._report.bind(this, xhr, code, notes), 10);
     }
   },
@@ -126,9 +126,8 @@ DOMSnitch.ScriptInclusion.prototype = {
   _checkXhr: function() {
     var xhr = JSON.parse(this._htmlElem.getAttribute("xhrData"));
     this._htmlElem.removeAttribute("xhrData");
-
     var seemsJson = this._isJson(xhr.responseBody);
-    
+
     if(seemsJson) {
       // Check for callbacks
       window.setTimeout(this._checkCallback.bind(this, xhr), 10);
@@ -153,7 +152,7 @@ DOMSnitch.ScriptInclusion.prototype = {
   _report: function(xhr, code, notes) {
     var record = {
       documentUrl: location.href,
-      type: "Script Inclusion",
+      type: "Script inclusion",
       data: this._stringifyXhr(xhr),
       callStack: [],
       gid: xhr.globalId,

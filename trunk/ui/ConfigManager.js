@@ -98,7 +98,8 @@ DOMSnitch.UI.ConfigManager.prototype = {
   },
   
   applyConfig: function(config) {
-    if(window.localStorage["ds-config-enable"] != "true") {
+    var enableFlag = window.localStorage["ds-config-enable"];
+    if(enableFlag && enableFlag != "true") {
       return;
     }
 

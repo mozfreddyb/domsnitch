@@ -98,6 +98,10 @@ DOMSnitch.UI.ConfigManager.prototype = {
   },
   
   applyConfig: function(config) {
+    if(window.localStorage["ds-config-enable"] != "true") {
+      return;
+    }
+
     if(!config) {
       config = this._getConfigData();
     }

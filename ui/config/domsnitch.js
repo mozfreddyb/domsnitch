@@ -88,7 +88,36 @@ function handleSaveScope() {
   window.localStorage["ds-scope"] = JSON.stringify(scope);
 }
 
+function toggleConf() {
+  var confEnable = document.getElementById("conf-enable");
+  window.localStorage["ds-config-enable"] = confEnable.checked;
+}
+
+function updateConfigUrl() {
+  var confUrl = document.getElementById("conf-url");
+  window.localStorage["ds-config-url"] = confUrl.value;
+  
+  var backgroundPage = chrome.extension.getBackgroundPage();
+  backgroundPage.base.configManager.applyConfig();
+  
+  location.reload();
+}
+
 function init() {
+  // Config updates
+  var confEnable = document.getElementById("conf-enable");
+  confEnable.addEventListener("click", toggleConf, true);
+  confEnable.checked = window.localStorage["ds-config-enable"] == "true";
+
+  var confUrl = document.getElementById("conf-url");
+  var configUrl = window.localStorage["ds-config-url"];
+  confUrl.value = configUrl ? configUrl : "";
+  
+  var confUrlSave = document.getElementById("conf-url-save");
+  confUrlSave.addEventListener("click", updateConfigUrl, true);
+
+  
+  // Enabled heuristics
   var optContent = document.getElementById("opt-content");
   optContent.addEventListener("click", handleOptionChange, true);
   
@@ -100,6 +129,8 @@ function init() {
   
   setOptions();
 
+  
+  // Scope
   var scope = JSON.parse(window.localStorage["ds-scope"]);
   var scopeTextbox = document.getElementById("opt-scopeContent").children[0];
   scopeTextbox.value = scope.join("\n");
@@ -107,6 +138,8 @@ function init() {
   var saveScopeButton = document.getElementById("saveScopeButton");
   saveScopeButton.addEventListener("click", handleSaveScope);
   
+  
+  // Trusted origins
   var origins = JSON.parse(window.localStorage["ds-origins"]);
   var originsTextbox = document.getElementById("opt-originsContent").children[0];
   originsTextbox.value = origins.join("\n");

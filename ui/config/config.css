@@ -84,9 +84,16 @@
   display: table-cell;
 }
 
+.section-content input[type="text"] {
+  border: 1px solid #000;
+  font-family: courier new; 
+  width: 423px;
+}
+
 .section-content p {
   display: inline;
   float: left;
+  margin-top: 0px;
   width: 200px;
 }
 
@@ -122,6 +129,6 @@ button {
   margin: 5px 15px 5px 15px;
 }
 
-textarea {
+input, textarea {
   margin-top: 10px;
 }

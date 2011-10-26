@@ -16,7 +16,7 @@
 
 DOMSnitch.UI.ActivityLog = function(parent) {
   this._parent = parent;
-  this._title = "DOM Snitch: Activity Log";
+  this._title = parent.appName + ": Activity Log";
   this._windowName = "activityLog";
   this._columnTitles = [
     {title: "Id", click: this._createSortByHandler("id", "asc", this)},
@@ -114,7 +114,7 @@ DOMSnitch.UI.ActivityLog.prototype._handleMenuItemExportAsText = function() {
   if(count) {
     var storageExport = new DOMSnitch.UI.StorageExport(this._parent);
   } else {
-    alert("There are no records in DOM Snitch to export!");
+    alert("There are no records to export!");
   }
 }
 
@@ -128,7 +128,7 @@ DOMSnitch.UI.ActivityLog.prototype._handleMenuItemExportToGDocs = function(scanV
     var gDocsExport = new DOMSnitch.Export.GoogleDocs(this._parent, statusBar, scanVerbosity);
     gDocsExport.bulkExport();
   } else {
-    alert("There are no records in DOM Snitch to export!");
+    alert("There are no records to export!");
   }
 }
 

@@ -15,6 +15,7 @@
  */
 
 DOMSnitch.UI.Main = function() {
+  this._appName = "DOM Snitch";
   this._registeredHeuristics = [];
   this._storage = new DOMSnitch.Storage(this);
   this._configManager = new DOMSnitch.UI.ConfigManager(this);
@@ -29,6 +30,10 @@ DOMSnitch.UI.Main = function() {
 }
 
 DOMSnitch.UI.Main.prototype = {
+  get appName() {
+    return this._appName;
+  },
+  
   get configManager() {
     return this._configManager;
   },

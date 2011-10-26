@@ -28,20 +28,6 @@ DOMSnitch.UI.RichUI.prototype._build = function() {
   this._showNoIssuesMessage();
 }
   
-DOMSnitch.UI.RichUI.prototype._createDataSectionClickHandler = function(data) {
-  return function() {
-    while(/%\w{2}/.test(data)) {
-      data = window.unescape(data);
-    }
-    
-    this.innerText = data.replace(/(.{100})/g, "$1\n");
-    this.onmouseover = null;
-    this.onmouseout = null;
-    this.onclick = null;
-    this.title = null;
-  };
-}
-  
 DOMSnitch.UI.RichUI.prototype._createExportLinkClickHandler = function(viewer, recordId) {
   return function(event) {
     if(!this._exportCursor) {
@@ -108,7 +94,7 @@ DOMSnitch.UI.RichUI.prototype._createRecordBody = function(record, useNesting) {
   bodyContent.appendChild(this._createSection("Global ID:", record.gid));
   bodyContent.appendChild(this._createSection("Document URL:", record.documentUrl));
 
-  var dataContent = record.data.split("\n\n-----\n\n");
+  var dataContent = record.data && record.data.split("\n\n-----\n\n");
   bodyContent.appendChild(this._createSection("Data used:", dataContent, ""));
   bodyContent.appendChild(
     this._createSection("Stack trace:", record.callStack, "", null, true));
@@ -154,12 +140,17 @@ DOMSnitch.UI.RichUI.prototype._createRecordHeader = function(record, useNesting)
   idCell.appendChild(tagElem);
   recordHeader.appendChild(idCell);
   
-  var urlCell = this._createHtmlElement("td", "", record.topLevelUrl.replace(/(.{150})/g, "$1\n"));
+  var urlCellText = record.topLevelUrl;
+  urlCellText = urlCellText ? urlCellText.replace(/(.{150})/g, "$1\n") : "";
+  var urlCell = this._createHtmlElement("td", "", urlCellText);
   urlCell.title = recordHeader.notes ? recordHeader.notes + "\n" : "";
   urlCell.title += "Document URL:\n";
   urlCell.title += record.documentUrl;
-  urlCell.title += "\n\nData used:\n";
-  urlCell.title += record.data.length > 300 ? record.data.substring(0, 300) : record.data;
+  if(record.data) {
+    urlCell.title += "\n\nData used:\n";
+    urlCell.title += record.data.length > 300 ? 
+      record.data.substring(0, 300) : record.data;
+  }
   recordHeader.appendChild(urlCell);
   
   var typeCell = this._createHtmlElement("td", "", record.type);
@@ -178,25 +169,6 @@ DOMSnitch.UI.RichUI.prototype._createRecordMenu = function(title, caption, click
   return menuItem;
 }
 
-DOMSnitch.UI.RichUI.prototype._createRecordOption = function(title, caption, clickHandler, rowId, checked) {
-  var menuOption = this._createHtmlElement("label", "", title);
-  menuOption.setAttribute("for", "[mo]" + rowId);
-  menuOption.title = caption;
-  menuOption.addEventListener("mouseover", this._handleMouseOver.bind(this), true);
-  menuOption.addEventListener("mouseout", this._handleMouseOut.bind(this), true);
-  menuOption.addEventListener("click", clickHandler, true);
-
-  var checkBox = this._createHtmlElement("input");
-  checkBox.setAttribute("id", "[mo]" + rowId);
-  checkBox.setAttribute("type", "checkbox");
-  if(checked) {
-    checkBox.setAttribute("checked", "");
-  }
-
-  menuOption.appendChild(checkBox);
-  return menuOption;
-}
-  
 DOMSnitch.UI.RichUI.prototype._createRowClickHandler = function(className) {
   return function() {
     if(this.expanded) {
@@ -228,7 +200,7 @@ DOMSnitch.UI.RichUI.prototype._createSection = function(title, content, caption,
         this._createDataSection(pair[0], pair.slice(1).join("\n")));
     }
   } else {
-    contentElem.innerText = content.replace(/(.{200})/g, "$1\n");
+    contentElem.innerText = content && content.replace(/(.{200})/g, "$1\n");
     if(caption) {
       contentElem.title = caption;
     }
@@ -249,9 +221,11 @@ DOMSnitch.UI.RichUI.prototype._createCodeSection = function(frame) {
   var document = this.document;
   var section = document.createElement("div");
   
-  section.appendChild(
-    this._createHtmlElement(
-      "p", "recordCodeLine", frame.src.replace(/(.{150})/g, "$1\n")));
+  if(frame.src) {
+    section.appendChild(
+      this._createHtmlElement(
+        "p", "recordCodeLine", frame.src.replace(/(.{150})/g, "$1\n")));
+  }
  
   /*
   var argList = frame.data.split(" | ");
@@ -261,10 +235,11 @@ DOMSnitch.UI.RichUI.prototype._createCodeSection = function(frame) {
   }
   
   section.appendChild(
-    this._createHtmlElement("pre", "recordCodeSnippet", "Arguments:\n" + args));
+    this._createHtmlElement(
+      "pre", "recordCodeSnippet", "Arguments:\n" + args));
   */
   
-  if(frame.code.length > 0) {
+  if(frame.code && frame.code.length > 0) {
     section.appendChild(
       this._createHtmlElement(
         "pre", "recordCodeSnippet", frame.code.replace(/(.{150})/g, "$1\n")));

@@ -16,7 +16,7 @@
 
 DOMSnitch.UI.RecordExport = function(parent, recordId) {
   this._parent = parent;
-  this._title = "DOM Snitch: Plain text export for record #" + recordId;
+  this._title = parent.appName + ": Plain text export for record #" + recordId;
   this._columnTitles = [{title: "Plain text export for record #" + recordId}];
   
   this.showViewer();
@@ -31,19 +31,29 @@ DOMSnitch.UI.RecordExport.prototype._stringifyCodeSection = function(title, cont
     body += "(most recent)\n"
     for(var i = 0; i < content.length; i++) {
       body += "[Frame " + (i + 1) + "]\n";
-      body += "*source url*\n" + content[i].src + "\n";
-      body += "*arguments*\n";
       
-      var args = content[i].data.split(" | ");
-      for(var j = 0; j < args.length; j++) {
-        body += (j + 1) + ": " + args[j] + "\n";
+      if(content[i].src) {
+        body += "*source url*\n" + content[i].src + "\n";
       }
       
-      body += "\n*code*\n" + content[i].code + "\n--------------------------\n\n";
+      if(content[i].data) {
+        body += "*arguments*\n";
+        
+        var args = content[i].data.split(" | ");
+        for(var j = 0; j < args.length; j++) {
+          body += (j + 1) + ": " + args[j] + "\n";
+        }
+      }
+      
+      if(content[i].code) {
+        body += "\n*code*\n" + content[i].code;
+      }
+      
+      body += "\n--------------------------\n\n";
     }
   } else {
     var i = 1;
-    for(key in content) {
+    for(var key in content) {
       body += i++ + ": " + key + ":\n" + content[key] + "\n\n";
     }
   }
@@ -57,11 +67,6 @@ DOMSnitch.UI.RecordExport.prototype._stringifyTextSection = function(title, cont
 
 DOMSnitch.UI.RecordExport.prototype.displayRecord = function(record) {
   if(this._window.closed) {
-    return;
-  }
-
-  if(record.type.indexOf("doc.cookie") == 0) {
-    // A conscious decision to never export document.cookie findings
     return;
   }
 

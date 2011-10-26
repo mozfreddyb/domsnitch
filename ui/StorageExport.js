@@ -16,7 +16,7 @@
 
 DOMSnitch.UI.StorageExport = function(parent) {
   this._parent = parent;
-  this._title = "DOM Snitch: Storage Export";
+  this._title = parent.appName + ": Storage Export";
   this._columnTitles = [
     {title: "Global ID"},
     {title: "Type"},
@@ -36,11 +36,6 @@ DOMSnitch.UI.StorageExport.prototype = new DOMSnitch.UI.BasicUI;
 
 DOMSnitch.UI.StorageExport.prototype.displayRecord = function(record) {
   if(this._window.closed) {
-    return;
-  }
-  
-  if(record.type.indexOf("doc.cookie") == 0) {
-    // A conscious decision to never export document.cookie findings
     return;
   }
   

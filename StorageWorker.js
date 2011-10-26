@@ -94,12 +94,21 @@ DOMSnitch.StorageWorker.prototype = {
               topLevelUrl: result.topLevelUrl,
               type: result.type,
               data: result.data,
-              env: JSON.parse(result.env),
-              callStack: JSON.parse(result.callStack),
-              gid: result.gid,
-              scanInfo: JSON.parse(result.scanInfo)
-            }; 
-            
+              gid: result.gid
+            };
+
+            if(result.env && result.env != "undefined") {
+              record.env = JSON.parse(result.env);
+            }
+
+            if(result.callStack && result.callStack != "undefined") {
+              record.callStack = JSON.parse(result.callStack);
+            }
+
+            if(result.scanInfo && result.scanInfo != "undefined") {
+              record.scanInfo = JSON.parse(result.scanInfo);
+            }
+
             this._sendToParent(cookie, "result", record);
           }
         }.bind(this),
@@ -122,11 +131,20 @@ DOMSnitch.StorageWorker.prototype = {
               topLevelUrl: result.topLevelUrl,
               type: result.type,
               data: result.data,
-              env: JSON.parse(result.env),
-              callStack: JSON.parse(result.callStack),
-              gid: result.gid,
-              scanInfo: JSON.parse(result.scanInfo)
-            }; 
+              gid: result.gid
+            };
+
+            if(result.env && result.env != "undefined") {
+              record.env = JSON.parse(result.env);
+            }
+
+            if(result.callStack && result.callStack != "undefined") {
+              record.callStack = JSON.parse(result.callStack);
+            }
+
+            if(result.scanInfo && result.scanInfo != "undefined") {
+              record.scanInfo = JSON.parse(result.scanInfo);
+            }
 
             this._sendToParent(cookie, "result", record);
           }

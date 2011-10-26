@@ -43,6 +43,8 @@ DOMSnitch.UI.TabManager.prototype = {
     for(var tab in this._activeTabs) {
       var tabId = window.parseInt(tab);
       var tabMode = this.getMode(tabId);
+
+      //TODO(radi): Potentially dead code. Investigate if needed. 
       if(tabMode & DOMSnitch.UI.TabManager.MODES.Passive) {
         var configFlags = {};
         for(var option in this._parent.selectedOptions) {

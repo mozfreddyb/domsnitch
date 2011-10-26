@@ -16,7 +16,7 @@
 
 DOMSnitch.UI.RecordView = function(parent, recordGid) {
   this._parent = parent;
-  this._title = "DOM Snitch: Record View";
+  this._title = parent.appName + ": Record View";
   this._columnTitles = [
     {title: "Id", click: null},
     {title: "URL", click: null},

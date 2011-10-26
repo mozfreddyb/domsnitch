@@ -87,7 +87,7 @@ DOMSnitch.Scanner.Base.prototype = {
     var idx = container.indexOf(delim);
     if(idx > 0) {
       var param = container.substring(0, idx);
-      var value = unescape(container.substring(idx + 1).replace(/\+/gg, " "));
+      var value = unescape(container.substring(idx + 1).replace(/\+/g, " "));
       return {param: param, value: value};
     } else {
       return { param: "(global)", value: container};

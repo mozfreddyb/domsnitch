@@ -45,7 +45,7 @@ DOMSnitch.Export.GoogleDocs = function(parent, statusBar, scanVerbosity) {
     "consumer_key": "anonymous",
     "consumer_secret": "anonymous",
     "scope": "https://spreadsheets.google.com/feeds/ https://docs.google.com/feeds/",
-    "app_name": "DOM Snitch"
+    "app_name": parent.appName
   });
   
   // A hack to counter a bug in the ChromeExOAuth constructor
@@ -62,7 +62,7 @@ DOMSnitch.Export.GoogleDocs.prototype = {
   },
   
   _csvEscape: function(data) {
-    return data.replace(/"/g, "\"\"");
+    return data ? data.replace(/"/g, "\"\"") : "";
   },
   
   _displayPrompt: function(responseXHR) {
@@ -75,22 +75,41 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     var promptMsg = "Exporting to Google Docs has finished. " +
         "Would you like to open the exported spreadsheet?"; 
     if(confirm(promptMsg)) {
-      this._parent.skipNextInjection();
       chrome.tabs.create({url: url + spreadsheetId});
     }
   },
   
+  _getCsvFilename: function(date, verbosity) {
+    var hours = date.getUTCHours();
+    var mins = date.getUTCMinutes()
+    if(verbosity.length > 0) {
+      verbosity = " of " + verbosity.toLowerCase() + " ranked records";
+    }
+    
+    hours = (hours < 10 ? "0" : "") + hours;
+    mins = (mins < 10 ? "0" : "") + mins;
+
+    return this._populateString(
+      "{2} Export{1} at {0}", 
+      [
+        "" + hours + mins + "GMT",
+        verbosity,
+        this._parent.appName.replace(" ", "")
+      ]
+    );
+  },
+
   _getRecordCount: function(count) {
     this._recordCount += count;
   },
-  
+
   _handleExportError: function() {
     //TODO: Add clean-up code
     
     this._statusBar.hide();
     alert("An error while exporting has occured. Please try again in a few moments.");
   },
-  
+
   _makeRequest: function(method, url, body, callback, headers) {
     var authz = this._oauth.getAuthorizationHeader(url, method, {});
 
@@ -115,7 +134,7 @@ DOMSnitch.Export.GoogleDocs.prototype = {
   },
   
   _populateString: function(string, params) {
-    for(var i = 0; i < params.length; i++) {
+    for(var i = 0; params && i < params.length; i++) {
       string = string.replace(new RegExp("\\{" + i + "\\}", "g"), params[i]);
     }
     
@@ -123,25 +142,9 @@ DOMSnitch.Export.GoogleDocs.prototype = {
   },
   
   _sendRecords: function() {
-    if(this._recordBuff.length == 0) {
-      this._displayPrompt();
-      return;
-    }
-    
-    console.debug('_sendRecords() called.');
-
     var url = "https://docs.google.com/feeds/upload/create-session/default/private/full";
     var verbosity = this._scanner.stringifyStatusCode(this._scanVerbosity);
-    if(verbosity.length > 0) {
-      verbosity = " of " + verbosity.toLowerCase() + " ranked records";
-    }
-    
-    var date = new Date;
-    var title = this._populateString(
-      "DOM Snitch Export{1} at {0}", 
-      ["" + date.getUTCHours() + date.getUTCMinutes() + "GMT", verbosity]
-    );
-    
+    var title = this._getCsvFilename(new Date, verbosity);
     var body = "\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\"\n";
     body = this._populateString(
       body,
@@ -159,7 +162,9 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     
     for(var i = 0; i < this._recordBuff.length; i++) {
       var record = this._recordBuff[i];
-      record.env.cookie = "";
+      if(record.env && record.env.cookie) {
+        record.env.cookie = "";
+      }
       var entry = "\"{0}\",\"{1}\",\"{2}\"," +
           "\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\"\n";
       
@@ -195,13 +200,7 @@ DOMSnitch.Export.GoogleDocs.prototype = {
   },
   
   _uploadCsvData: function(body, responseXHR) {
-    console.debug(responseXHR);
-    var responseHeaders = responseXHR.getAllResponseHeaders();
-    console.debug(responseHeaders);
     var locationURI = responseXHR.getResponseHeader("Location");
-    
-    console.debug(locationURI);
-    
     var range = body.length - 1;
     var headers = [
       {key: "Content-Type", value: "text/csv"}
@@ -228,11 +227,10 @@ DOMSnitch.Export.GoogleDocs.prototype = {
   },
   
   exportRecord: function(record) {
-    if(record.type.indexOf("doc.cookie") == 0) {
-      // A conscious decision to never export document.cookie findings
+    var scanResult = this._scanner.checkOnDisplay(record);
+    if(scanResult.code == DOMSnitch.Scanner.STATUS.IGNORED) {
       return;
     }
-    var scanResult = this._scanner.checkOnDisplay(record);
     
     if(this._scanVerbosity == DOMSnitch.Scanner.STATUS.NONE || scanResult.code == this._scanVerbosity) {
       record.code = this._scanner.stringifyStatusCode(scanResult.code);
@@ -240,7 +238,7 @@ DOMSnitch.Export.GoogleDocs.prototype = {
       this._recordBuff.push(record);
     }
 
-    if(--this._recordCount == 0) {
+    if(0 >= --this._recordCount) {
       this._sendRecords();
     }
   },

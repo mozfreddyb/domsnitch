@@ -33,7 +33,7 @@ DOMSnitch.UI.ConfigManager.prototype = {
     var configData = window.localStorage["ds-config-data"];
     if(configData) {
       try {
-        JSON.parse(configData);
+        configData = JSON.parse(configData);
         return configData;
       } catch (e) {
         delete window.localStorage["ds-config-data"];
@@ -65,7 +65,6 @@ DOMSnitch.UI.ConfigManager.prototype = {
   },
   
   _isTypeInScope: function(type) {
-    console.debug(type);
     var selected = JSON.parse(window.localStorage["ds-opt-config"]);
     
     var inScope = selected[type];
@@ -143,7 +142,6 @@ DOMSnitch.UI.ConfigManager.prototype = {
           this._defaultMode += DOMSnitch.UI.TabManager.MODES.Passive;
         }
       }
-      console.debug('called config.components');
     }
   },
   

@@ -19,6 +19,10 @@ DOMSnitch.Scanner.IgnoreList = function() {
 
 DOMSnitch.Scanner.IgnoreList.prototype = {
   _checkHttpHeaders: function(rule, record) {
+    if(!rule.conditions || rule.conditions.length == 0) {
+      return false;
+    }
+
     var headers = rule.conditions.split(",");
     for(var i = 0; i < headers.length; i++) {
       var needle = headers[i];
@@ -36,6 +40,10 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
   },
   
   _checkReflectedInput: function(rule, record) {
+    if(!rule.conditions || rule.conditions.length == 0) {
+      return false;
+    }
+    
     var term = rule.conditions.match(/term=([\w,]+)/);
     term = term ? term[1] : term;
     var source = rule.conditions.match(/source=([\w,]+)/);
@@ -72,7 +80,7 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
     if(sink) {
       var sinks = sink.split(",");
       for(var i = 0; i < sinks.length; i++) {
-        var regex = new RegExp("displayed " + sinks[i] + "\s\[", "i");
+        var regex = new RegExp("displayed " + sinks[i] + "\\s\\[", "i");
         if(regex.test(record.scanInfo.notes)) {
           foundSink = true;
           break;

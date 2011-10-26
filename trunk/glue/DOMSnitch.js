@@ -28,7 +28,7 @@ DOMSnitch = function(configData) {
     );
   
   this._modules = {};
-  for(moduleName in DOMSnitch.Modules) {
+  for(var moduleName in DOMSnitch.Modules) {
     if(moduleName == "Base") {
       continue;
     }

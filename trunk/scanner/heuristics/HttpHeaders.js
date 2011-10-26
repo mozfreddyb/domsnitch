@@ -22,7 +22,8 @@ DOMSnitch.HttpHeaders.prototype = {
   _checkCharacterSet: function(responseHeaders) {
     for(var i = 0; i < responseHeaders.length; i++) {
       if(/^content-type:\s.*charset=/i.test(responseHeaders[i]) ||
-         /^content-type: image\//i.test(responseHeaders[i])) {
+         /^content-type: image\//i.test(responseHeaders[i]) ||
+         /^content-length: 0$/i.test(responseHeaders[i])) {
         return;
       }
     }
@@ -42,7 +43,7 @@ DOMSnitch.HttpHeaders.prototype = {
     reportData += "\n\n-----\n\nHTML document meta:\n";
     reportData += metaElems.length > 0 ? metaElemsAsStr.join("\n") : "(none)";
     
-    var code = 3; // High
+    var code = 2; // Medium
     var notes = "No character set is defined.\n";
     this._report(reportData, code, notes);
   },

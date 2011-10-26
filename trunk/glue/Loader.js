@@ -115,6 +115,9 @@ DOMSnitch.Loader.prototype = {
   },
   
   loadModule: function(moduleName, moduleSource, needsDOM) {
+    if(window.DIR_PATH) {
+      moduleSource = window.DIR_PATH + moduleSource;
+    }
     var xhr = new XMLHttpRequest;
     var moduleUrl = chrome.extension.getURL(moduleSource)
     xhr.open("GET", moduleUrl, false);

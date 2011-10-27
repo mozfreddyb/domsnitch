@@ -41,10 +41,18 @@ DOMSnitch.MixedContent.prototype = {
   },
   
   _handleBeforeLoad: function(event) {
-    var safeNodes = {"IMG":null, "AUDIO":null, "VIDEO":null, "IFRAME":null};
-    if(event.target.nodeName in safeNodes) {
+    if(event.target.nodeName == "IFRAME") {
       return;
     }
+    
+    var code = 3; // High
+    if(event.target.nodeName == "IMG") {
+      code = 1; // Low
+    } else if(event.target.nodeName == "AUDIO" ||
+        event.target.nodeName == "VIDEO") {
+      code = 2; // Medium
+    }
+    
     
     if(location.protocol == "https:" && event.url.match(/^http:/i)) {
       var elem = event.target.nodeName.toLowerCase();
@@ -84,7 +92,7 @@ DOMSnitch.MixedContent.prototype = {
           referrer: document.referrer
         },
         scanInfo: {
-          code: 3, // High
+          code: code,
           notes: notes 
         }
       };
@@ -97,5 +105,3 @@ DOMSnitch.MixedContent.prototype = {
     chrome.extension.sendRequest({type: "log", record: obj});
   }
 }
-
-var mixedContent = new DOMSnitch.MixedContent();

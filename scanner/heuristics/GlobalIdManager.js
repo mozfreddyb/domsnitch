@@ -55,5 +55,3 @@ DOMSnitch.GlobalIdManager.prototype = {
     this._assignGlobalId(event.target);
   }
 }
-
-globalId = new DOMSnitch.GlobalIdManager();

@@ -106,5 +106,3 @@ DOMSnitch.HttpHeaders.prototype = {
     return "Request:\n" + request + "\n\n-----\n\nResponse:\n" + response;
   }
 }
-
-var httpHeaders = new DOMSnitch.HttpHeaders();

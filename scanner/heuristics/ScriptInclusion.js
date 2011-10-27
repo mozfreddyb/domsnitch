@@ -27,7 +27,7 @@ DOMSnitch.ScriptInclusion.prototype = {
     }
     
     if(xhr.responseBody.match(/^(while\s*\((\d+|true)\)|\/\/)/i)) {
-      var code = 3; // High
+      var code = xhr.method == "GET" ? 3 : 2; // High if over GET
       var notes = "Detected use of weak prefixes for breaking JavaScript parsing.\n";
       window.setTimeout(this._report.bind(this, xhr, code, notes), 10);
     }
@@ -109,7 +109,7 @@ DOMSnitch.ScriptInclusion.prototype = {
       code = 2; // Medium
       notes = "JSON served over GET.\n";
       window.setTimeout(this._report.bind(this, xhr, code, notes), 10);
-
+/*
     } else if(method == "POST" && !(xhr.requestUrl.match(/delete|remove/))) {
       var shadowXhr = new XMLHttpRequest;
       shadowXhr.open("GET", xhr.requestUrl, false);
@@ -120,6 +120,7 @@ DOMSnitch.ScriptInclusion.prototype = {
         notes = "Successfully forced JSON to be served over GET.\n";
         window.setTimeout(this._report.bind(this, xhr, code, notes), 10);
       }
+*/
     }
   },
   
@@ -177,5 +178,3 @@ DOMSnitch.ScriptInclusion.prototype = {
     return "Request:\n" + request + "\n\n-----\n\nResponse:\n" + response;
   }
 }
-
-var scriptInclusion = new DOMSnitch.ScriptInclusion();

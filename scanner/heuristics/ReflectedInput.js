@@ -354,5 +354,3 @@ DOMSnitch.ReflectedInput.prototype = {
     return (unescape(haystack)).match(/\w+/g);
   }
 }
-
-var reflectedInput = new DOMSnitch.ReflectedInput();

@@ -42,7 +42,8 @@
         "scanner/heuristics/ScriptSource.js",
         "scanner/heuristics/Json.js",
         "scanner/heuristics/ScriptInclusion.js",
-        "scanner/heuristics/HttpHeaders.js"
+        "scanner/heuristics/HttpHeaders.js",
+        "scanner/heuristics/StartHeuristics.js"
       ],
       "run_at": "document_start",
       "all_frames": true

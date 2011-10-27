@@ -150,5 +150,3 @@ DOMSnitch.ScriptSource.prototype = {
     chrome.extension.sendRequest({type: "log", record: obj});
   }  
 }
-
-var scriptSource = new DOMSnitch.ScriptSource();

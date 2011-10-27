@@ -111,5 +111,3 @@ DOMSnitch.Json.prototype = {
     chrome.extension.sendRequest({type: "log", record: obj});
   }  
 }
-
-var json = new DOMSnitch.Json();

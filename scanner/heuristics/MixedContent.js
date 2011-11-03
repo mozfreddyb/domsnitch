@@ -14,11 +14,11 @@
  * limitations under the License.
  */
  
-DOMSnitch.MixedContent = function() {
+DOMSnitch.Heuristics.MixedContent = function() {
   document.addEventListener("beforeload", this._handleBeforeLoad.bind(this), true);
 }
 
-DOMSnitch.MixedContent.prototype = {
+DOMSnitch.Heuristics.MixedContent.prototype = {
   _createGlobalId: function(elem) {
     var baseUrl = document.location.origin + document.location.pathname + "#"; 
     var gid = elem.id;

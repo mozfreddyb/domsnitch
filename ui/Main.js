@@ -16,9 +16,11 @@
 
 DOMSnitch.UI.Main = function() {
   this._appName = "DOM Snitch";
+  this._configManager = new DOMSnitch.UI.ConfigManager(this);
+  this._checkVersion();
+
   this._registeredHeuristics = [];
   this._storage = new DOMSnitch.Storage(this);
-  this._configManager = new DOMSnitch.UI.ConfigManager(this);
   this._tabManager = new DOMSnitch.UI.TabManager(this);
   this._contextMenu = new DOMSnitch.UI.ContextMenu(this);
   this._activityLog = new DOMSnitch.UI.ActivityLog(this);
@@ -64,6 +66,31 @@ DOMSnitch.UI.Main.prototype = {
   
   get tabManager() {
     return this._tabManager;
+  },
+  
+  _checkVersion: function() {
+    var version = window.localStorage["version"];
+    
+    var xhr = new XMLHttpRequest;
+    xhr.open("GET", "manifest.json", false);
+    xhr.send();
+    
+    var manifestFile = xhr.responseText.split("\n");
+    for(var i = 0; i < manifestFile.length; i++) {
+      if(manifestFile[i].trim().match(/^(\/\/|\*|\/\*)/)) {
+        manifestFile.splice(i, 1);
+        i--;
+      }
+    }
+    
+    var manifest = JSON.parse(manifestFile.join(""));
+    if(version != manifest.version) {
+      window.localStorage["ds-config-enable"] = true;
+      this.configManager.applyConfig();
+      window.localStorage["version"] = manifest.version;
+    }
+    
+    this._appName = manifest.name;
   },
   
   _handleRecordCapture: function(request, sender, sendResponse) {

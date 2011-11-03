@@ -132,11 +132,3 @@ DOMSnitch.Loader.prototype = {
     }
   }
 }
-
-loader= new DOMSnitch.Loader();
-loader.loadModule("DOMSnitch", "glue/DOMSnitch.js", false);
-loader.loadModule("DOMSnitch.Modules.Base", "modules/Base.js", false);
-loader.loadModule("DOMSnitch.Modules.Document", "modules/Document.js", false);
-loader.loadModule("DOMSnitch.Modules.Window", "modules/Window.js", false);
-loader.loadModule("DOMSnitch.Modules.XmlHttpRequest", "modules/XmlHttpRequest.js", false);
-loader.load();

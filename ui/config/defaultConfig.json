@@ -27,5 +27,11 @@
     "Script inclusion"
   ],
   "safeOrigins" : [],
-  "ignoreRules" : []
+  "ignoreRules" : [
+    {
+      "url" : ".*",
+      "heuristic" : "Reflected input",
+      "conditions" : "term=(\\w|\\d+)"
+    }
+  ]
 }

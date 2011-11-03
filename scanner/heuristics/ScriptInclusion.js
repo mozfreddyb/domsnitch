@@ -14,20 +14,20 @@
  * limitations under the License.
  */
  
-DOMSnitch.ScriptInclusion = function() {
+DOMSnitch.Heuristics.ScriptInclusion = function() {
   this._htmlElem = document.childNodes[document.childNodes.length - 1];
   document.addEventListener("XMLHttpRequest", this._checkXhr.bind(this), true);
 }
 
-DOMSnitch.ScriptInclusion.prototype = {
+DOMSnitch.Heuristics.ScriptInclusion.prototype = {
   _checkBreakers: function(xhr) {
     if(xhr.responseBody.match(/^['\]\}\)]{4}\n/) || xhr.responseBody.match(/^&&&/)) {
       // Proper JavaScript interpreter breakers have been spotted
       return true;
     }
     
-    if(xhr.responseBody.match(/^(while\s*\((\d+|true)\)|\/\/)/i)) {
-      var code = xhr.method == "GET" ? 3 : 2; // High if over GET
+    if(xhr.responseBody.match(/^(while\s*\([\w\s\|&\.=<>!\?]*\)|\/\/)/i)) {
+      var code = xhr.requestMethod == "GET" ? 3 : 2; // High if over GET
       var notes = "Detected use of weak prefixes for breaking JavaScript parsing.\n";
       window.setTimeout(this._report.bind(this, xhr, code, notes), 10);
     }
@@ -37,6 +37,11 @@ DOMSnitch.ScriptInclusion.prototype = {
   
   _checkCallback: function(xhr) {
     //TODO(radi): Iron out regex as to eliminate suspicions of false positives
+    if(!!xhr.responseBody.match(/^while\s*\(/)) {
+      var idx = xhr.responseBody.indexOf(")");
+      xhr.responseBody = xhr.responseBody.substring(idx + 1);
+    }
+
     var match = xhr.responseBody.match(/\w+/g);
     if(match) {
       var url = xhr.requestUrl.toLowerCase();
@@ -169,11 +174,16 @@ DOMSnitch.ScriptInclusion.prototype = {
   
   _stringifyXhr: function(xhr) {
     var request = xhr.requestMethod + " " + xhr.requestUrl + "\n";
-    request += xhr.requestHeaders + "\n\n" + xhr.requestBody;
+    request += xhr.requestHeaders;
+    if(xhr.requestBody) {
+      request += "\n\n" + xhr.requestBody;
+    }
     
     var response = xhr.responseStatus + "\n";
-    response += xhr.responseHeaders + "\n\n";
-    response += xhr.responseBody;
+    response += xhr.responseHeaders;
+    if(xhr.responseBody) {
+      response += "\n\n" + xhr.responseBody;
+    }
     
     return "Request:\n" + request + "\n\n-----\n\nResponse:\n" + response;
   }

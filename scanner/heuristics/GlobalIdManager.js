@@ -14,12 +14,12 @@
  * limitations under the License.
  */
  
-DOMSnitch.GlobalIdManager = function() {
+DOMSnitch.Heuristics.GlobalIdManager = function() {
   document.addEventListener("DOMContentLoaded", this._handleNewNodes.bind(this), true);
   document.addEventListener("DOMNodeInsertedIntoDocument", this._handleNewNodes.bind(this), true);
 }
 
-DOMSnitch.GlobalIdManager.prototype = {
+DOMSnitch.Heuristics.GlobalIdManager.prototype = {
   _assignGlobalId: function(elem) {
     if(!elem.gid) {
       elem.gid = this._createGlobalId(elem);

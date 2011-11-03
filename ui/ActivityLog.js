@@ -157,7 +157,8 @@ DOMSnitch.UI.ActivityLog.prototype._isNestingEnabled = function() {
 
 DOMSnitch.UI.ActivityLog.prototype.displayRecord = function(record) {
   var scanResult = this._scanner.checkOnDisplay(record);
-  if(this._window.closed || scanResult.code == DOMSnitch.Scanner.STATUS.IGNORED) {
+  if(this._window.closed || !scanResult ||
+      scanResult.code == DOMSnitch.Scanner.STATUS.IGNORED) {
     return;
   }
   this._hideNoIssuesMessage();

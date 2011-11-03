@@ -14,7 +14,7 @@
  * limitations under the License.
  */
  
-DOMSnitch.ReflectedInput = function() {
+DOMSnitch.Heuristics.ReflectedInput = function() {
   document.addEventListener("DOMNodeInsertedIntoDocument", this._checkHtml.bind(this), true);
   document.addEventListener("DOMSubtreeModified", this._checkText.bind(this), true);
   
@@ -35,7 +35,7 @@ DOMSnitch.ReflectedInput = function() {
   this._tokenizedReferrerData = this._tokenizeHaystack(document.referrer.replace(location.hostname, ""));
 }
 
-DOMSnitch.ReflectedInput.prototype = {
+DOMSnitch.Heuristics.ReflectedInput.prototype = {
   _buildReport: function(recordInfo, foundValues) {
     var elem = recordInfo.elem;
     var data = "Rendered content:\n";

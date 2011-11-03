@@ -170,3 +170,4 @@ DOMSnitch.COMM_STR = {
 };
 
 DOMSnitch.Modules = {};
+DOMSnitch.Heuristics = {};

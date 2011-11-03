@@ -14,11 +14,11 @@
  * limitations under the License.
  */
  
-DOMSnitch.HttpHeaders = function() {
+DOMSnitch.Heuristics.HttpHeaders = function() {
   window.setTimeout(this._checkOwnHeaders.bind(this), 10);
 }
 
-DOMSnitch.HttpHeaders.prototype = {
+DOMSnitch.Heuristics.HttpHeaders.prototype = {
   _checkCharacterSet: function(responseHeaders) {
     for(var i = 0; i < responseHeaders.length; i++) {
       if(/^content-type:\s.*charset=/i.test(responseHeaders[i]) ||
@@ -48,6 +48,20 @@ DOMSnitch.HttpHeaders.prototype = {
     this._report(reportData, code, notes);
   },
   
+  _checkContentTypeOptions: function(responseHeaders) {
+    for(var i = 0; i < responseHeaders.length; i++) {
+      if(/^x-content-type-options:\s+nosniff/i.test(responseHeaders[i])) {
+        return;
+      }
+    }
+
+    var reportData = "Response headers:\n" + responseHeaders.join("\n");
+    
+    var code = 2; // Medium
+    var notes = "The X-Content-Type-Options header is missing or not properly set.\n";
+    this._report(reportData, code, notes);
+  },
+
   _checkFrameOptions: function(responseHeaders) {
     for(var i = 0; i < responseHeaders.length; i++) {
       if(/^x-frame-options:\s(sameorigin|deny)/i.test(responseHeaders[i])) {
@@ -70,6 +84,7 @@ DOMSnitch.HttpHeaders.prototype = {
     var responseHeaders = xhr.getAllResponseHeaders().split("\n");
     window.setTimeout(this._checkCharacterSet.bind(this, responseHeaders), 10);
     window.setTimeout(this._checkFrameOptions.bind(this, responseHeaders), 10);
+    window.setTimeout(this._checkContentTypeOptions.bind(this, responseHeaders), 10);
   },
   
   _report: function(reportData, code, notes) {

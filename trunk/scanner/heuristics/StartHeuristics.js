@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
-var globalId = new DOMSnitch.GlobalIdManager();
-var httpHeaders = new DOMSnitch.HttpHeaders();
-var json = new DOMSnitch.Json();
-var mixedContent = new DOMSnitch.MixedContent();
-var reflectedInput = new DOMSnitch.ReflectedInput();
-var scriptSource = new DOMSnitch.ScriptSource();
-var scriptInclusion = new DOMSnitch.ScriptInclusion();
+loader= new DOMSnitch.Loader();
+loader.loadModule("DOMSnitch", "glue/DOMSnitch.js", false);
+loader.loadModule("DOMSnitch.Modules.Base", "modules/Base.js", false);
+loader.loadModule("DOMSnitch.Modules.Document", "modules/Document.js", false);
+loader.loadModule("DOMSnitch.Modules.Window", "modules/Window.js", false);
+loader.loadModule("DOMSnitch.Modules.XmlHttpRequest", "modules/XmlHttpRequest.js", false);
+loader.load();
+
+var globalId = new DOMSnitch.Heuristics.GlobalIdManager();
+var httpHeaders = new DOMSnitch.Heuristics.HttpHeaders();
+var json = new DOMSnitch.Heuristics.Json();
+var mixedContent = new DOMSnitch.Heuristics.MixedContent();
+var reflectedInput = new DOMSnitch.Heuristics.ReflectedInput();
+var scriptSource = new DOMSnitch.Heuristics.ScriptSource();
+var scriptInclusion = new DOMSnitch.Heuristics.ScriptInclusion();

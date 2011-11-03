@@ -14,12 +14,12 @@
  * limitations under the License.
  */
  
-DOMSnitch.ScriptSource = function() {
+DOMSnitch.Heuristics.ScriptSource = function() {
   document.addEventListener("beforeload", this._checkScriptSource.bind(this), true);
   document.addEventListener("beforeload", this._checkEmbedSource.bind(this), true);
 }
 
-DOMSnitch.ScriptSource.prototype = {
+DOMSnitch.Heuristics.ScriptSource.prototype = {
   _checkEmbedSource: function(event) {
     if(event.target.nodeName != "EMBED" || event.url == "") {
       return;
@@ -93,7 +93,7 @@ DOMSnitch.ScriptSource.prototype = {
     }
     
     var regex = new RegExp("^((http|https):){0,1}\\/\\/[\\w\\.-]*" +
-      this._getOwnTld().replace(".", "\\."), "i");
+      this._getOwnTld(location.hostname).replace(".", "\\."), "i");
     
     if(!src.match(regex)) {
       var data = "URL:\n" + event.url;
@@ -137,13 +137,9 @@ DOMSnitch.ScriptSource.prototype = {
     return gid + elem.nodeName;
   },
   
-  _getOwnTld: function() {
-    if(/^(\d+\.){4}$/.test(location.hostname)) {
-      return location.hostname;
-    } else {
-      var match = location.hostname.match(/[\w-]+\.\w+$/);
-      return match ? match[0] : location.hostname;
-    }
+  _getOwnTld: function(hostname) {
+    var match = hostname.match(/[\w-]+\.\w{2,4}$/);
+    return match ? match[0] : hostname;
   },
   
   _report: function(obj) {

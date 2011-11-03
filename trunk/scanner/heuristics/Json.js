@@ -14,12 +14,12 @@
  * limitations under the License.
  */
  
-DOMSnitch.Json = function() {
+DOMSnitch.Heuristics.Json = function() {
   document.addEventListener("Eval", this._handleEval.bind(this), true);
   this._htmlElem = document.childNodes[document.childNodes.length - 1];
 }
 
-DOMSnitch.Json.prototype = {
+DOMSnitch.Heuristics.Json.prototype = {
   _checkJsonValidity: function(recordInfo) {
     if(!recordInfo.jsData) {
       return;
@@ -36,10 +36,10 @@ DOMSnitch.Json.prototype = {
       jsData = jsData.substring(1, jsData.length - 1);
     }
 
-    var seemsJSON = /^\{.+\}$/.test(jsData) || /^\[.+\]$/.test(jsData);
-    seemsJSON = /this\.[\w_\s]+=['"\w\s]+;/.test(jsData) ? false : seemsJSON;
+    //var seemsJSON = /^\{.+\}$/.test(jsData) || /^\[.+\]$/.test(jsData);
+    //seemsJSON = /this\.[\w_\s]+=['"\w\s]+;/.test(jsData) ? false : seemsJSON;
 
-    if(seemsJSON) {
+    if(this._isJson(jsData)) {
       try {
         JSON.parse(jsData);
       } catch (e) {
@@ -105,6 +105,15 @@ DOMSnitch.Json.prototype = {
       ),
       10
     );
+  },
+  
+  _isJson: function(jsData) {
+    var seemsJson = /\{.+\}/.test(jsData);
+    seemsJson = seemsJson || /\[.+\]/.test(jsData);
+    seemsJson = seemsJson && !(/(function|while|if)[\s\w]*\(/.test(jsData));
+    seemsJson = seemsJson && !(/(try|else)\s*\{/.test(jsData));
+    
+    return seemsJson;
   },
   
   _report: function(obj) {

@@ -19,18 +19,18 @@
   "components" : ["DOMSnitch"],
   "scope" : [],
   "heuristics" : [
-    "HTTP headers",
-    "Invalid JSON",
-    "Mixed content",
-    "Reflected input",
-    "Untrusted code",
-    "Script inclusion"
+    "httpHeaders",
+    "invalidJson",
+    "mixedContent",
+    "reflectedInput",
+    "untrustedCode",
+    "scriptInclusion"
   ],
   "safeOrigins" : [],
   "ignoreRules" : [
     {
-      "url" : ".*",
-      "heuristic" : "Reflected input",
+      "url" : "*",
+      "heuristic" : "reflectedInput",
       "conditions" : "term=(\\w|\\d+)"
     }
   ]

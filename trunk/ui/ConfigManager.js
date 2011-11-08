@@ -17,6 +17,15 @@
 DOMSnitch.UI.ConfigManager = function(parent) {
   this._parent = parent;
   this._defaultMode = undefined;
+  
+  this._heuristicsTable = {
+    "httpheaders": "HTTP headers",
+    "invalidjson": "Invalid JSON",
+    "mixedcontent": "Mixed content",
+    "reflectedinput": "Reflected input",
+    "untrustedcode": "Untrusted code",
+    "scriptinclusion": "Script inclusion"
+  };
 }
 
 DOMSnitch.UI.ConfigManager.prototype = {
@@ -85,6 +94,7 @@ DOMSnitch.UI.ConfigManager.prototype = {
     
     for(var i = 0; i < scope.length; i++) {
       var regexStr = scope[i];
+      regexStr = regexStr.replace(/\/$/, "");
       regexStr = regexStr.replace(/\\/g, "\\\\");
       regexStr = regexStr.replace(/\*/g, "[\\w\\.-]*");
       var regex = new RegExp("^https{0,1}://" + regexStr + "/", "i");
@@ -94,6 +104,10 @@ DOMSnitch.UI.ConfigManager.prototype = {
     }
     
     return false;
+  },
+  
+  _loadExtendedConfig: function(config) {
+    // This is a stub method for extensibility purposes.
   },
   
   applyConfig: function(config) {
@@ -112,7 +126,9 @@ DOMSnitch.UI.ConfigManager.prototype = {
       var availHeuristics = {};
       
       for(var i = 0; i < config.heuristics.length; i++) {
-        var heuristic = config.heuristics[i];
+        var heuristic = config.heuristics[i].toLowerCase();
+        heuristic = heuristic.replace(/\s/g, "");
+        heuristic = this._heuristicsTable[heuristic];
         availHeuristics[heuristic] = 1;
       }
       
@@ -121,6 +137,13 @@ DOMSnitch.UI.ConfigManager.prototype = {
     
     if(config.ignoreRules) {
       // Set the ignore rules that need to be enabled.
+      
+      for(var i = 0; i < config.ignoreRules.length; i++) {
+        var heuristic = config.ignoreRules[i].heuristic.toLowerCase();
+        heuristic = heuristic.replace(/\s/g, "");
+        config.ignoreRules[i].heuristic = this._heuristicsTable[heuristic];
+      }
+      
       window.localStorage["ds-ignoreRules"] = JSON.stringify(config.ignoreRules);
     }
     
@@ -143,6 +166,9 @@ DOMSnitch.UI.ConfigManager.prototype = {
         }
       }
     }
+    
+    this._loadExtendedConfig(config);
+    
   },
   
   isInScope: function(url, type, ignoreType) {

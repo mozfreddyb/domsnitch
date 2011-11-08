@@ -90,6 +90,15 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
     
     return foundTerm & foundSource & foundSink;
   },
+  
+  _checkUrl: function(rule, url) {
+    var urlStr = rule.url;
+    urlStr = urlStr.replace(/\./g, "\\.");
+    urlStr = urlStr.replace(/\*/g, ".*");
+    var regex = new RegExp(urlStr, "i");
+    
+    return regex.test(url);
+  },
 
   check: function(record) {
     var rules = JSON.parse(window.localStorage["ds-ignoreRules"]);
@@ -98,8 +107,8 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
     for(var i = 0; i < rules.length; i++) {
       var rule = rules[i];
       
-      var regex = new RegExp(rule.url, "i");
-      if(record.type == rule.heuristic && regex.test(record.documentUrl)) {
+      if(record.type == rule.heuristic &&
+            this._checkUrl(rule, record.documentUrl)) {
         if(record.type == "Reflected input") {
           ignore = ignore | this._checkReflectedInput(rule, record);
         } else if(record.type == "HTTP headers") {

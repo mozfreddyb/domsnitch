@@ -32,6 +32,10 @@ DOMSnitch.UI.Main = function() {
 }
 
 DOMSnitch.UI.Main.prototype = {
+  get activityLog() {
+    return this._activityLog;
+  },
+  
   get appName() {
     return this._appName;
   },

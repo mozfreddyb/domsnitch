@@ -189,7 +189,7 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
 
     var foundValues = [];
     var valuesMap = {};
-    var minSize = inTextNode ? 5 : 1;
+    var minSize = inTextNode ? 3 : 1;
     var bannedParams = /^(true|false|org|com|http|https)$/i;
     var haystackIsArray = haystack instanceof Array;
     var processedHaystack = haystackIsArray ? haystack.join(" ") : haystack;

@@ -44,7 +44,7 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
       return false;
     }
     
-    var term = rule.conditions.match(/term=([\w,]+)/);
+    var term = rule.conditions.match(/term=([\w\\\(\)\+|?^$!\*\{\}\.,]+)/);
     term = term ? term[1] : term;
     var source = rule.conditions.match(/source=([\w,]+)/);
     source = source ? source[1] : source;

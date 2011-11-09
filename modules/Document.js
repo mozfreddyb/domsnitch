@@ -17,6 +17,12 @@
 DOMSnitch.Modules.Document = function(parent) {
   this._parent = parent;
   this._targets = {
+    "document.createElement": {
+      capture: true,
+      funcName: "createElement", 
+      obj: document, 
+      origPtr: document.createElement
+    },
     "document.write": {
       capture: true,
       funcName: "write", 
@@ -38,21 +44,24 @@ DOMSnitch.Modules.Document = function(parent) {
   this.beforeDocumentWriteEvt.initEvent("BeforeDocumentWrite", true, true);
   this.documentWriteEvt = document.createEvent("Event");
   this.documentWriteEvt.initEvent("DocumentWrite", true, true);
+  
+  this._shadowElem = document.createElement("div");
+  this._shadowElem.style.display = "none";
+  document.documentElement.appendChild(this._shadowElem);
 }
 
 DOMSnitch.Modules.Document.prototype = new DOMSnitch.Modules.Base;
 
 DOMSnitch.Modules.Document.prototype._createElement = function() {
   var target = this._targets["document.createElement"];
-  var htmlModule = this._parent.modules["Html"];
   var elem = target.origPtr.apply(target.obj, arguments);
-
-  htmlModule.interceptElement(elem);
+  this._shadowElem.appendChild(elem);
   
   return elem;
 }
 
-DOMSnitch.Modules.Document.prototype._createMethod = function(module, type, target, callback) {
+DOMSnitch.Modules.Document.prototype._createMethod = 
+    function(module, type, target, callback) {
   return function(data) {
     document.dispatchEvent(module.beforeDocumentWriteEvt);
     var retVal = target.origPtr.apply(this, arguments);
@@ -71,6 +80,8 @@ DOMSnitch.Modules.Document.prototype.load = function() {
   
   this._overloadMethod("document.write", "doc.write");
   this._overloadMethod("document.writeln", "doc.write");
+  this._overloadMethod(
+    "document.createElement", "doc.createElem", this._createElement.bind(this));
 
   this._loaded = true;
 }

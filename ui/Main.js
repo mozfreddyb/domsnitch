@@ -123,7 +123,7 @@ DOMSnitch.UI.Main.prototype = {
       record.callStack = window.JSON.parse(record.callStack);
     }
     
-    for(prop in record) {
+    for(var prop in record) {
       if(!record[prop]) {
         record[prop] = "";
       }

@@ -38,8 +38,8 @@ DOMSnitch.Loader = function() {
     );
   };
   
-  this._runCodeThroughRootElement("dsloader = " + dsloader.toString());
-  this._runCodeThroughRootElement("dsloader()");
+  //this._runCodeThroughRootElement("dsloader = " + dsloader.toString());
+  //this._runCodeThroughRootElement("dsloader()");
 }
 
 DOMSnitch.Loader.prototype = {
@@ -49,11 +49,14 @@ DOMSnitch.Loader.prototype = {
   },
   
   _loadCode: function(jscode) {
+    /*
     if(document.body) {
       this._runCodeThroughNewElement(jscode);
     } else {
       this._runCodeThroughEvent(jscode);
     }
+    */
+    this._runCodeThroughNewElement(jscode);
   },
 
   _receiveFromExt: function(request, sender, sendResponse) {
@@ -86,8 +89,8 @@ DOMSnitch.Loader.prototype = {
   _runCodeThroughNewElement: function(jscode) {
     var scriptElem = document.createElement("script");
     scriptElem.textContent = jscode;
-    document.body.appendChild(scriptElem);
-    document.body.removeChild(scriptElem);
+    document.documentElement.appendChild(scriptElem);
+    document.documentElement.removeChild(scriptElem);
   },
   
   _runCodeThroughRootElement: function(jscode) {

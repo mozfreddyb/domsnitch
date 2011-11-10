@@ -79,7 +79,7 @@ DOMSnitch.Heuristics.ScriptInclusion.prototype = {
     
     if(!/^application\/x-javascript; charset=utf-8$/i.test(contentType) &&
        !/^application\/json; charset=utf-8$/i.test(contentType) &&
-       !/^application\/javascript; charset=utf-8$/i.test(contentType)) {
+       !/^(application|text)\/javascript; charset=utf-8$/i.test(contentType)) {
       code = 2; // Medium
       notes = "JSON served with wrong Content-Type header [value: " + contentType + "].\n";
       window.setTimeout(this._report.bind(this, xhr, code, notes), 10);
@@ -133,8 +133,9 @@ DOMSnitch.Heuristics.ScriptInclusion.prototype = {
     var xhr = JSON.parse(this._htmlElem.getAttribute("xhrData"));
     this._htmlElem.removeAttribute("xhrData");
     var seemsJson = this._isJson(xhr.responseBody);
+    var statusOk = xhr.responseStatus == 200;
 
-    if(seemsJson) {
+    if(seemsJson && statusOk) {
       // Check for callbacks
       window.setTimeout(this._checkCallback.bind(this, xhr), 10);
       
@@ -149,12 +150,13 @@ DOMSnitch.Heuristics.ScriptInclusion.prototype = {
   _isJson: function(xhrResponse) {
     var seemsJson = /\{.+\}/.test(xhrResponse);
     seemsJson = seemsJson || /\[.+\]/.test(xhrResponse);
-    seemsJson = seemsJson && !(/(function|while|if)[\s\w]*\(/.test(xhrResponse));
-    seemsJson = seemsJson && !(/(try|else)\s*\{/.test(xhrResponse));
+    seemsJson = seemsJson && !(/(function|while|if)[\s\w]*\(/i.test(xhrResponse));
+    seemsJson = seemsJson && !(/(try|else)\s*\{/i.test(xhrResponse));
+    seemsJson = seemsJson && !(/^<!doctype\shtml/i.test(xhrResponse));
     
     return seemsJson;
   },
-  
+
   _report: function(xhr, code, notes) {
     var record = {
       documentUrl: location.href,

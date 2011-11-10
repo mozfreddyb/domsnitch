@@ -85,27 +85,6 @@ DOMSnitch.UI.ConfigManager.prototype = {
     return !!inScope;
   },
   
-  _isUrlInScope: function(url) {
-    var scope = JSON.parse(window.localStorage["ds-scope"]);
-    
-    if(scope.length == 0) {
-      return true;
-    }
-    
-    for(var i = 0; i < scope.length; i++) {
-      var regexStr = scope[i];
-      regexStr = regexStr.replace(/\/$/, "");
-      regexStr = regexStr.replace(/\\/g, "\\\\");
-      regexStr = regexStr.replace(/\*/g, "[\\w\\.-]*");
-      var regex = new RegExp("^https{0,1}://" + regexStr + "/", "i");
-      if(regex.test(url)) {
-        return true;
-      }
-    }
-    
-    return false;
-  },
-  
   _loadExtendedConfig: function(config) {
     // This is a stub method for extensibility purposes.
   },
@@ -172,7 +151,28 @@ DOMSnitch.UI.ConfigManager.prototype = {
   },
   
   isInScope: function(url, type, ignoreType) {
-    return this._isUrlInScope(url) && (ignoreType || this._isTypeInScope(type));
+    return this.isUrlInScope(url) && (ignoreType || this._isTypeInScope(type));
+  },
+  
+  isUrlInScope: function(url) {
+    var scope = JSON.parse(window.localStorage["ds-scope"]);
+    
+    if(scope.length == 0) {
+      return true;
+    }
+    
+    for(var i = 0; i < scope.length; i++) {
+      var regexStr = scope[i];
+      regexStr = regexStr.replace(/\/$/, "");
+      regexStr = regexStr.replace(/\\/g, "\\\\");
+      regexStr = regexStr.replace(/\*/g, "[\\w\\.-]*");
+      var regex = new RegExp("^https{0,1}://" + regexStr + "/", "i");
+      if(regex.test(url)) {
+        return true;
+      }
+    }
+    
+    return false;
   },
   
   setConfigUrl: function(configUrl) {

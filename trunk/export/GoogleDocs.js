@@ -124,7 +124,13 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     }
     xhr.setRequestHeader("Authorization", authz);
     xhr.setRequestHeader("GData-Version", "3.0");
-    xhr.send(body);
+    
+    try {
+      xhr.send(body);
+    } catch(e) {
+      this._handleExportError();
+      throw e;
+    }
     
     return callback ? "" : xhr.responseText;
   },

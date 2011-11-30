@@ -37,12 +37,23 @@ DOMSnitch.UI.ConfigManager.prototype = {
     this._defaultMode = value;
   },
   
-  _getConfigData: function() {
+  _exportExtendedConfig: function(config) {
+    // This is a stub method for extensibility purposes.
+    
+    return config;
+  },
+  
+  _getConfigData: function(callback) {
     // Attempt 1: Get stored config data
     var configData = window.localStorage["ds-config-data"];
     if(configData) {
       try {
         configData = JSON.parse(configData);
+
+        if(callback) {
+          window.setTimeout(callback, 10, configData);
+        }
+        
         return configData;
       } catch (e) {
         delete window.localStorage["ds-config-data"];
@@ -51,25 +62,29 @@ DOMSnitch.UI.ConfigManager.prototype = {
     
     // Attempt 2: Get config data from a file
     var url = window.localStorage["ds-config-url"];
-    if(!url || url.length == 0) {
+    if(!url) {
       url = chrome.extension.getURL("/ui/config/defaultConfig.json");
     }
     
-    var xhr = new XMLHttpRequest;
-    xhr.open("GET", url, false);
-    xhr.send();
-    
-    
     var config = null;
     try {
+      var xhr = new XMLHttpRequest;
+      xhr.open("GET", url, false);
+      xhr.send();
+
       config = xhr.responseText.replace(/\n/g, "");
       config = JSON.parse(config.replace(/\/\*.*\*\//, ""));
     } catch (e) {
-      window.alert("The specified configuration is malformed. Reverting to the default configuration.");
-      window.localStorage["ds-config-url"] = "";
-      config = this._getConfigData();
+      var errMsg = "The specified configuration could not be loaded!" +
+      		" Reverting to previous configuration.";
+      window.alert(errMsg);
+      config = false;
     }
     
+    if(callback) {
+      window.setTimeout(callback, 10, config);
+    }
+
     return config;
   },
   
@@ -89,14 +104,18 @@ DOMSnitch.UI.ConfigManager.prototype = {
     // This is a stub method for extensibility purposes.
   },
   
-  applyConfig: function(config) {
+  applyConfig: function(config, callback) {
     var enableFlag = window.localStorage["ds-config-enable"];
     if(enableFlag && enableFlag != "true") {
       return;
     }
 
     if(!config) {
-      config = this._getConfigData();
+      config = this._getConfigData(callback);
+    }
+    
+    if(!config) {
+      return;
     }
     
     if(config.heuristics) {
@@ -147,7 +166,27 @@ DOMSnitch.UI.ConfigManager.prototype = {
     }
     
     this._loadExtendedConfig(config);
+  },
+  
+  exportConfig: function() {
+    //TODO
+    var config = {};
     
+    config.profile = "<Enter profile name>";
+    config.components = [];
+    if(this._defaultMode) {
+      if(this._defaultMode & DOMSnitch.UI.TabManager.MODES.Passive) {
+        config.components.push("DOMSnitch");
+      }
+    }
+    
+    config.scope = JSON.parse(window.localStorage["ds-scope"]);
+    config.safeOrigins = JSON.parse(window.localStorage["ds-origins"]);
+    config.ignoreRules = JSON.parse(window.localStorage["ds-ignoreRules"]);
+    
+    config = this._exportExtendedConfig(config);
+    
+    return config;
   },
   
   isInScope: function(url, type, ignoreType) {

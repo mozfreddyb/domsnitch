@@ -152,6 +152,6 @@ DOMSnitch.UI.Main.prototype = {
   },
   
   showConfigPage: function() {
-    chrome.tabs.create({url: "ui/config/domsnitch.html"});
+    chrome.tabs.create({url: "ui/config/config.html"});
   }
 }

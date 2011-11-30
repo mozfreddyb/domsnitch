@@ -16,7 +16,7 @@
  
 DOMSnitch.Heuristics.Json = function() {
   document.addEventListener("Eval", this._handleEval.bind(this), true);
-  this._htmlElem = document.childNodes[document.childNodes.length - 1];
+  this._htmlElem = document.documentElement;
 }
 
 DOMSnitch.Heuristics.Json.prototype = {

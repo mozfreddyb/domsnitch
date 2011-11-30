@@ -21,7 +21,7 @@ DOMSnitch = function(configData) {
   this._pageToExtEvt = document.createEvent("Event");
   this._pageToExtEvt.initEvent(DOMSnitch.COMM_STR["e-page2ext"], true, true);
   
-  this._htmlElem = document.childNodes[document.childNodes.length - 1];
+  this._htmlElem = document.documentElement;
   this._htmlElem.addEventListener(
       DOMSnitch.COMM_STR["e-ext2page"],
       this._receiveFromExt.bind(this)

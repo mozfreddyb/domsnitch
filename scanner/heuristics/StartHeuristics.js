@@ -22,10 +22,30 @@ loader.loadModule("DOMSnitch.Modules.Window", "modules/Window.js", false);
 loader.loadModule("DOMSnitch.Modules.XmlHttpRequest", "modules/XmlHttpRequest.js", false);
 loader.load();
 
-var globalId = new DOMSnitch.Heuristics.GlobalIdManager();
-var httpHeaders = new DOMSnitch.Heuristics.HttpHeaders();
-var json = new DOMSnitch.Heuristics.Json();
-var mixedContent = new DOMSnitch.Heuristics.MixedContent();
-var reflectedInput = new DOMSnitch.Heuristics.ReflectedInput();
-var scriptSource = new DOMSnitch.Heuristics.ScriptSource();
-var scriptInclusion = new DOMSnitch.Heuristics.ScriptInclusion();
+if(DOMSnitch.Heuristics.GlobalIdManager) {
+  var globalId = new DOMSnitch.Heuristics.GlobalIdManager();
+}
+
+if(DOMSnitch.Heuristics.HttpHeaders) {
+  var httpHeaders = new DOMSnitch.Heuristics.HttpHeaders();
+}
+
+if(DOMSnitch.Heuristics.Json) {
+  var json = new DOMSnitch.Heuristics.Json();
+}
+
+if(DOMSnitch.Heuristics.MixedContent) {
+  var mixedContent = new DOMSnitch.Heuristics.MixedContent();
+}
+
+if(DOMSnitch.Heuristics.ReflectedInput) {
+  var reflectedInput = new DOMSnitch.Heuristics.ReflectedInput();
+}
+
+if(DOMSnitch.Heuristics.ScriptSource) {
+  var scriptSource = new DOMSnitch.Heuristics.ScriptSource();
+}
+
+if(DOMSnitch.Heuristics.ScriptInclusion) {
+  var scriptInclusion = new DOMSnitch.Heuristics.ScriptInclusion();
+}

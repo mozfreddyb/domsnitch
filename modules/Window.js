@@ -27,7 +27,7 @@ DOMSnitch.Modules.Window = function(parent) {
   
   this._loaded = false;
   
-  this.htmlElem = document.childNodes[document.childNodes.length - 1];
+  this.htmlElem = document.documentElement;
   this.evalEvt = document.createEvent("Event");
   this.evalEvt.initEvent("Eval", true, true);
 }
@@ -67,7 +67,7 @@ DOMSnitch.Modules.Window.prototype.load = function() {
     return;
   }
 
-  this._overloadMethod("window.eval", "win.eval");
+  //this._overloadMethod("window.eval", "win.eval");
   this._loaded = true;
 }
 

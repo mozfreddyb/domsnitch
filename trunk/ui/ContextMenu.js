@@ -73,7 +73,7 @@ DOMSnitch.UI.ContextMenu.prototype = {
   
   updateMenuForTab: function(tabId, selectInfo) {
     var mode = this._parent.tabManager.getMode(tabId);
-
+    
     for(var menuItem in this._modeMap) {
       var checked = (mode & this._modeMap[menuItem]) > 0;
       chrome.contextMenus.update(window.parseInt(menuItem), {checked: checked});

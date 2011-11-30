@@ -15,10 +15,12 @@
  */
  
 DOMSnitch.Heuristics.ReflectedInput = function() {
+  this._dbg = DOMSnitch.Heuristics.LightDbg.getInstance();
+  
   document.addEventListener("DOMNodeInsertedIntoDocument", this._checkHtml.bind(this), true);
   document.addEventListener("DOMSubtreeModified", this._checkText.bind(this), true);
   
-  this._htmlElem = document.childNodes[document.childNodes.length - 1];
+  this._htmlElem = document.documentElement;
   document.addEventListener("BeforeDocumentWrite", this._persistPostMsgIndex.bind(this), true);
   document.addEventListener("DocumentWrite", this._checkDocWrite.bind(this), true);
   
@@ -76,6 +78,7 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
   },
 
   _checkDocWrite: function() {
+    //this._dbg.collectStackTrace();
     console.debug("_checkDocWrite() called.");
     
     this._globalPostMsgIndex = JSON.parse(window.localStorage["ds-pm-index"]);
@@ -90,7 +93,7 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
     }
   },
   
-  _checkElem: function(elem) {
+  _checkElem: function(elem, debugInfo) {
     var type = this._type;
     var attributes = [];
     for(var i = 0; i < elem.attributes.length; i++) {
@@ -128,7 +131,8 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
               source: haystack.name, 
               sink: "attribute", 
               type: type, 
-              elem: elem
+              elem: elem,
+              debugInfo: debugInfo
             },
             haystack.data,
             attributes
@@ -162,7 +166,8 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
               source: haystack.name, 
               sink: "innerHTML", 
               type: type, 
-              elem: elem
+              elem: elem,
+              debugInfo: debugInfo
             },
             haystack.data,
             tokens,
@@ -176,9 +181,14 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
   
   _checkHtml: function(event) {
     if(event.target instanceof HTMLElement) {
-      var elem = event.target;
+      var stack = this._dbg.collectStackTrace(this._dbgStackFilter);
+      if(window.USE_DEBUG && !stack) {
+        return;
+      }
       
-      this._checkElem(elem);
+      var elem = event.target;
+
+      window.setTimeout(this._checkElem.bind(this, elem, stack), 10);
     }
   },
   
@@ -187,9 +197,18 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
       return;
     }
 
+    var minSize = inTextNode ? 3 : 1;
+    if(window.USE_DEBUG && !!recordInfo.debugInfo) {
+      var sink = this._dbg.getSink(recordInfo.debugInfo);
+      if(!!sink) {
+        minSize = 0;
+      } else {
+        return;
+      }
+    }
+
     var foundValues = [];
     var valuesMap = {};
-    var minSize = inTextNode ? 3 : 1;
     var bannedParams = /^(true|false|org|com|http|https)$/i;
     var haystackIsArray = haystack instanceof Array;
     var processedHaystack = haystackIsArray ? haystack.join(" ") : haystack;
@@ -238,6 +257,11 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
   
   _checkText: function(event) {
     if(event.target instanceof Text) {
+      var debugInfo = this._dbg.collectStackTrace(this._dbgStackFilter);
+      if(!debugInfo) {
+        return;
+      }
+      
       var elem = event.target;
       var tokens = elem.textContent.match(/\w+/g);
       var postMsgIndex = [].concat(this._globalPostMsgIndex);
@@ -260,7 +284,8 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
               source: haystack.name, 
               sink: "text", 
               type: this._type, 
-              elem: elem
+              elem: elem,
+              debugInfo: debugInfo
             },
             haystack.data,
             tokens,
@@ -291,6 +316,12 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
     }
     
     return gid + elem.nodeName;
+  },
+  
+  _dbgStackFilter: function(stack) {
+    var stackArray = stack.split("    at ");
+    var stackFrame = stackArray[3];
+    return !!stackFrame && !!stackFrame.match(/^object\._createelement/i);
   },
   
   _findOverlap: function(listA, listB, isSorted) {

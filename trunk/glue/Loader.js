@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+window.DIR_PATH = "";
+window.USE_DEBUG = false;
+
 DOMSnitch.Loader = function() {
-  this._htmlElem = document.childNodes[document.childNodes.length - 1];
+  this._htmlElem = document.documentElement;
   this._modules = {};
   
   this._extToPageEvt = document.createEvent("Event");
@@ -24,11 +27,11 @@ DOMSnitch.Loader = function() {
   chrome.extension.onRequest.addListener(this._receiveFromExt.bind(this));
   
   var dsloader = function() {
-    var htmlElem = document.childNodes[document.childNodes.length - 1];
+    var htmlElem = document.documentElement;
     htmlElem.addEventListener(
       "dsloader",
       function() {
-        var htmlElem = document.childNodes[document.childNodes.length - 1];
+        var htmlElem = document.documentElement;
         var code = JSON.parse(htmlElem.getAttribute("dscode"));
 
         eval(code);

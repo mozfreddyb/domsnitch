@@ -39,7 +39,7 @@ DOMSnitch.Modules.Document = function(parent) {
   
   this._loaded = false;
   
-  this.htmlElem = document.childNodes[document.childNodes.length - 1];
+  this.htmlElem = document.documentElement;
   this.beforeDocumentWriteEvt = document.createEvent("Event");
   this.beforeDocumentWriteEvt.initEvent("BeforeDocumentWrite", true, true);
   this.documentWriteEvt = document.createEvent("Event");
@@ -65,6 +65,7 @@ DOMSnitch.Modules.Document.prototype._createMethod =
   return function(data) {
     document.dispatchEvent(module.beforeDocumentWriteEvt);
     var retVal = target.origPtr.apply(this, arguments);
+    module.htmlElem.setAttribute("docData", module._parent.JSON.stringify(data));
     document.dispatchEvent(module.documentWriteEvt);
 
     return retVal;
@@ -80,8 +81,8 @@ DOMSnitch.Modules.Document.prototype.load = function() {
   
   this._overloadMethod("document.write", "doc.write");
   this._overloadMethod("document.writeln", "doc.write");
-  this._overloadMethod(
-    "document.createElement", "doc.createElem", this._createElement.bind(this));
+  //this._overloadMethod(
+  //  "document.createElement", "doc.createElem", this._createElement.bind(this));
 
   this._loaded = true;
 }

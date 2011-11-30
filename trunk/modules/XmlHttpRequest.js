@@ -39,7 +39,7 @@ DOMSnitch.Modules.XmlHttpRequest = function(parent) {
   
   this._loaded = false;
   
-  this._htmlElem = document.childNodes[document.childNodes.length - 1];
+  this._htmlElem = document.documentElement;
   this._xhrEvt = document.createEvent("Event");
   this._xhrEvt.initEvent("XMLHttpRequest", true, true);
 }
@@ -82,19 +82,23 @@ DOMSnitch.Modules.XmlHttpRequest.prototype._createXhrSetRequestHeader = function
 
 DOMSnitch.Modules.XmlHttpRequest.prototype.generateGlobalId = function(type) {
   // Generate unique, yet reproducible global ID
-  var callerPtr = arguments.callee.caller;
-  
-  var name = "(inline)";
-  if(callerPtr.caller) {
-    var caller = callerPtr.caller.toString();
-    var match = caller.match(/^(function\s+){0,1}(\w*)(\([\w,]*\))/);
-    name = match ? match[0] : name;
-  }
-  
-  var baseUrl = document.location.origin + document.location.pathname + "#";
-  var gid = baseUrl + type + "/" + name;
+  try {
+    var callerPtr = arguments.callee.caller;
+    
+    var name = "(inline)";
+    if(callerPtr.caller) {
+      var caller = callerPtr.caller.toString();
+      var match = caller.match(/^(function\s+){0,1}(\w*)(\([\w,]*\))/);
+      name = match ? match[0] : name;
+    }
+    
+    var baseUrl = document.location.origin + document.location.pathname + "#";
+    var gid = baseUrl + type + "/" + name;
 
-  return gid;
+    return gid;
+  } catch (e) {
+    return "#xhr";
+  }
 }
 
 DOMSnitch.Modules.XmlHttpRequest.prototype.handleXhrStateChange = function(event) {

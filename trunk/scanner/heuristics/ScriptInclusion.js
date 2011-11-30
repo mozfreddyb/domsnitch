@@ -15,8 +15,11 @@
  */
  
 DOMSnitch.Heuristics.ScriptInclusion = function() {
-  this._htmlElem = document.childNodes[document.childNodes.length - 1];
-  document.addEventListener("XMLHttpRequest", this._checkXhr.bind(this), true);
+  this._htmlElem = document.documentElement;
+  //document.addEventListener("XMLHttpRequest", this._checkXhr.bind(this), true);
+  
+  var collector = DOMSnitch.Heuristics.XhrCollector.getInstance();
+  collector.addListener(this._checkXhr.bind(this));
 }
 
 DOMSnitch.Heuristics.ScriptInclusion.prototype = {
@@ -129,9 +132,8 @@ DOMSnitch.Heuristics.ScriptInclusion.prototype = {
     }
   },
   
-  _checkXhr: function() {
-    var xhr = JSON.parse(this._htmlElem.getAttribute("xhrData"));
-    this._htmlElem.removeAttribute("xhrData");
+  _checkXhr: function(event) {
+    var xhr = event.xhr;
     var seemsJson = this._isJson(xhr.responseBody);
     var statusOk = xhr.responseStatus == 200;
 
@@ -153,6 +155,8 @@ DOMSnitch.Heuristics.ScriptInclusion.prototype = {
     seemsJson = seemsJson && !(/(function|while|if)[\s\w]*\(/i.test(xhrResponse));
     seemsJson = seemsJson && !(/(try|else)\s*\{/i.test(xhrResponse));
     seemsJson = seemsJson && !(/^<!doctype\shtml/i.test(xhrResponse));
+    seemsJson = seemsJson && !(/^<\?xml\s/i.test(xhrResponse));
+    seemsJson = seemsJson && !(/^[\.#]{0,1}[\w-]+\{/i.test(xhrResponse));
     
     return seemsJson;
   },

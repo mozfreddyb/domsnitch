@@ -17,6 +17,7 @@
 #main {
   padding: 0px 10px 0px 10px;
   top: 0px;
+  width: 800px;
 }
 
 #navbar {
@@ -62,6 +63,10 @@
   vertical-align: top;
 }
 
+.dialog-content textarea {
+  width: 460px;
+}
+
 .dialog-title {
   font-weight: bold;
   padding-bottom: 10px;
@@ -87,7 +92,7 @@
 .section-content input[type="text"] {
   border: 1px solid #000;
   font-family: courier new; 
-  width: 423px;
+  width: 615px;
 }
 
 .section-content p {
@@ -126,9 +131,14 @@ body {
 
 button {
   color: #333;
-  margin: 5px 15px 5px 15px;
+  margin: 10px 15px 5px 15px;
 }
 
 input, textarea {
   margin-top: 10px;
+}
+
+textarea {
+  height: 200px;
+  width: 610px;
 }

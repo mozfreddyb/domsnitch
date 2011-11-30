@@ -49,8 +49,16 @@ DOMSnitch.Scanner.ScriptSource.prototype._checkScriptSource = function(record) {
 
   var isTrustedSource = false;
   for(var i = 0; i < safeOrigins.length; i++) {
-    var regex = new RegExp("^((http|https):){0,1}\\/\\/[\\w\\.-]*" +
-      safeOrigins[i].replace(".", "\\."), "i");
+    var regexStr = safeOrigins[i];
+    regexStr = regexStr.replace(/\/$/, "");
+    regexStr = regexStr.replace(/\\/g, "\\\\");
+    regexStr = regexStr.replace(/\*/g, "[\\w\\.-]*");
+    var regex = new RegExp("^(https{0,1}:){0,1}//" + regexStr, "i");
+
+    
+    
+    //var regex = new RegExp("^((http|https):){0,1}\\/\\/[\\w\\.-]*" +
+    //  safeOrigins[i].replace(".", "\\."), "i");
     isTrustedSource = url.match(regex) ? true : isTrustedSource;
   }
                    

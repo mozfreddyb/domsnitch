@@ -16,6 +16,7 @@ DOM Snitch is an experimental Chrome extension that enables non-security testers
    * Uses of scripts that would result in mixed content errors
    * Uses of invalid JSON syntax, resulting in the use of eval() as opposed to a much safer alternative function (e.g. JSON.parse())
  * Ability to export all or subsets of collected data as plain text or through Google Docs
+  * Ability to support larger scale deployments through the use of [ConfigFiles configuration files]
 
 ===Output===
 All information that is captured by DOM Snitch is displayed inside the activity log, a page that provides testers with the visibility of the DOM modifications that pose a security risk or are repeated continuously. Items in the activity log may be highlighted with:

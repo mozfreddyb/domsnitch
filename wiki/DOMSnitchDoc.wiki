@@ -33,10 +33,11 @@ In addition, DOM Snitch relies heavily on various events that get triggered when
 
 
 ===How do I operate DOM Snitch?===
-To start/stop DOM Snitch, click on the "Run DOM Snitch" item in the context menu of any page where DOM Snitch is present. To configure the extension, simply select "Configure…" from the context menu.
+To start/stop DOM Snitch, click on the "Run DOM Snitch" item in the context menu of any page where DOM Snitch is present. To configure the extension, simply select "Configure…" from the context menu`*`.
 
 Note that by default DOM Snitch will monitor all new tabs that are opened after the extension has been enabled. All tabs that have been opened prior to that will remain unmonitored.
 
+`*` Starting with version 0.723, DOM Snitch also supports the use of configuration files to ensure consistent deployment across multiple running instances of the extension. Documentation on how to use is available [ConfigFiles here].
 
 ===What information can I expect from DOM Snitch?===
 Through the activity log, DOM Snitch provides testers with the visibility of the DOM modifications that pose a security risk. An item in the activity log will provide these details:

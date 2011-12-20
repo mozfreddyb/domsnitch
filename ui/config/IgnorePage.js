@@ -239,7 +239,7 @@ DOMSnitch.UI.Config.IgnorePage.prototype._listRules = function(ignoreRules) {
     row.appendChild(conditionsCell);
     
     var mgmtCell = document.createElement("td");
-    mgmtCell.setAttribute("width", "150");
+    mgmtCell.setAttribute("width", "160");
     row.appendChild(mgmtCell);
     
     var edit = document.createElement("button");

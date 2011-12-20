@@ -19,14 +19,21 @@ DOMSnitch.UI.Main = function() {
   this._configManager = new DOMSnitch.UI.ConfigManager(this);
   this._checkVersion();
 
+  this._heuristicsPath = "scanner/heuristics/";
+  this._notifierPath = "ui/notification/";
   this._registeredHeuristics = [];
   this._storage = new DOMSnitch.Storage(this);
   this._tabManager = new DOMSnitch.UI.TabManager(this);
-  this._contextMenu = new DOMSnitch.UI.ContextMenu(this);
+  //this._contextMenu = new DOMSnitch.UI.ContextMenu(this);
   this._activityLog = new DOMSnitch.UI.ActivityLog(this);
   this._scanner = new DOMSnitch.Scanner();
+  chrome.extension.onRequest.addListener(this._handleDismissRequest.bind(this));
   chrome.extension.onRequest.addListener(this._handleRecordCapture.bind(this));
   chrome.tabs.onUpdated.addListener(this._handleUpdatedTab.bind(this));
+  chrome.tabs.onUpdated.addListener(this._loadHeuristics.bind(this));
+  
+  chrome.browserAction.setBadgeBackgroundColor({color: [25, 99, 147, 255]});
+  this._countMsg = " issues found!";
   
   this._configManager.applyConfig();
 }
@@ -97,6 +104,13 @@ DOMSnitch.UI.Main.prototype = {
     this._appName = manifest.name;
   },
   
+  _handleDismissRequest: function(request, sender, sendResponse) {
+    //TODO
+    if(request.type == "hideNotification") {
+      window.localStorage["hideNotification"] = true;
+    }
+  },
+  
   _handleRecordCapture: function(request, sender, sendResponse) {
     if(request.type != "log") {
       return;
@@ -140,10 +154,56 @@ DOMSnitch.UI.Main.prototype = {
   },
   
   _handleUpdatedTab: function(tabId, selectInfo) {
-    if(this._configManager.defaultMode != undefined) {
+    var mode = this._tabManager.getMode(tabId);
+    if(this._configManager.defaultMode != undefined &&
+          mode == DOMSnitch.UI.TabManager.Unknown) {
       this._tabManager.setMode(tabId, this._configManager.defaultMode);
       this._contextMenu.updateMenuForTab(tabId, selectInfo);
     }
+  },
+  
+  _loadHeuristics: function(tabId, changeInfo, tab) {
+    var inScope = this._configManager.isUrlInScope(tab.url) &&
+        !!tab.url.match(/^https*:/i);
+    if(changeInfo.status == "loading" && inScope) {
+      chrome.tabs.executeScript(
+          tabId, {code: "window.IN_SCOPE = true", allFrames: true});
+      chrome.tabs.executeScript(
+        tabId, 
+        {file: this._heuristicsPath + "StartHeuristics.js", allFrames: true}
+      );
+      
+      var mode = this._tabManager.getMode(tabId);
+      if(mode != DOMSnitch.UI.TabManager.MODES.Standby &&
+              window.localStorage["hideNotification"] != "true") {
+        chrome.tabs.insertCSS(
+          tabId, {file: this._notifierPath + "notifier.css"});
+        chrome.tabs.executeScript(
+          tabId, {code: "window.APP_NAME = '" + this.appName + "'"});
+        chrome.tabs.executeScript(
+            tabId, {file: this._notifierPath + "Notifier.js"});
+      }
+
+    }
+  },
+  
+  exportAll: function() {
+    var mockStatus = {
+      hide: function(){},
+      setText: function(){}
+    };
+
+    var exporter = new DOMSnitch.Export.GoogleDocs(
+      this, 
+      mockStatus, 
+      DOMSnitch.Scanner.STATUS.NONE
+    );
+    exporter.bulkExport();
+  },
+  
+  setFindingsCount: function(count) {
+    chrome.browserAction.setBadgeText({text: count.toString()});
+    chrome.browserAction.setTitle({title: count.toString() + this._countMsg});
   },
   
   showActivityLog: function() {

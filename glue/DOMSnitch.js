@@ -28,14 +28,16 @@ DOMSnitch = function(configData) {
     );
   
   this._modules = {};
+  /*
   for(var moduleName in DOMSnitch.Modules) {
     if(moduleName == "Base") {
       continue;
     }
     this._modules[moduleName] = new DOMSnitch.Modules[moduleName](this);
   }
+  */
   
-  this._loadModules();  
+  this.loadModules();  
 }
 
 DOMSnitch.prototype = {
@@ -61,13 +63,7 @@ DOMSnitch.prototype = {
       this._hooks[entry] = handler;
     }
     
-    this._loadModules();
-  },
-  
-  _loadModules: function() {
-    for(module in this._modules) {
-      this._modules[module].load();
-    }
+    this.loadModules();
   },
   
   _receiveFromExt: function() {
@@ -100,6 +96,26 @@ DOMSnitch.prototype = {
     }
   },
 
+  loadModules: function() {
+    var moduleNames = Object.getOwnPropertyNames(DOMSnitch.Modules);
+    for(var i = 0; i < moduleNames.length; i++) {
+      var moduleName = moduleNames[i];
+      
+      if(moduleName == "Base" || !!this._modules[moduleName]) {
+        continue;
+      } else {
+        var module = new DOMSnitch.Modules[moduleName](this);
+        module.load();
+        this._modules[moduleName] = module;
+      }
+    }
+    /*
+    for(module in this._modules) {
+      this._modules[module].load();
+    }
+    */
+  },
+  
   recordCapture: function(stack, trace, data, type, gid) {
     var caller = stack.caller;
     var documentModule = this._modules["Document"];

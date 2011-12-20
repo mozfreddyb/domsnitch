@@ -68,17 +68,31 @@ DOMSnitch.UI.ConfigManager.prototype = {
     
     var config = null;
     try {
+      var timestamp = new Date(0);
       var xhr = new XMLHttpRequest;
       xhr.open("GET", url, false);
+      xhr.setRequestHeader("If-Modified-Since", timestamp.toUTCString());
       xhr.send();
 
       config = xhr.responseText.replace(/\n/g, "");
-      config = JSON.parse(config.replace(/\/\*.*\*\//, ""));
+      
+      // Strip leading comments from the config file.
+      var idx = config.indexOf("/*");
+      if(idx == 0) {
+        idx = config.indexOf("*/") + 2;
+        if(idx > 1) {
+          config = config.substring(idx);
+        }
+      }
+      config = JSON.parse(config);
     } catch (e) {
       var errMsg = "The specified configuration could not be loaded!" +
       		" Reverting to previous configuration.";
       window.alert(errMsg);
+      console.debug(config);
+      temp = config;
       config = false;
+      console.error(e.stack);
     }
     
     if(callback) {
@@ -181,8 +195,19 @@ DOMSnitch.UI.ConfigManager.prototype = {
     }
     
     config.scope = JSON.parse(window.localStorage["ds-scope"]);
+    var heuristics = JSON.parse(window.localStorage["ds-opt-config"]);
+    var hList = Object.getOwnPropertyNames(heuristics);
+    for(var i = 0; i < hList.length; i++) {
+      if(heuristics[hList[i]] == 0) {
+        hList.splice(i, 1);
+        i--;
+      }
+    }
+    config.heuristics = hList;
+
     config.safeOrigins = JSON.parse(window.localStorage["ds-origins"]);
     config.ignoreRules = JSON.parse(window.localStorage["ds-ignoreRules"]);
+
     
     config = this._exportExtendedConfig(config);
     
@@ -205,7 +230,7 @@ DOMSnitch.UI.ConfigManager.prototype = {
       regexStr = regexStr.replace(/\/$/, "");
       regexStr = regexStr.replace(/\\/g, "\\\\");
       regexStr = regexStr.replace(/\*/g, "[\\w\\.-]*");
-      var regex = new RegExp("^https{0,1}://" + regexStr + "/", "i");
+      var regex = new RegExp("^https{0,1}://" + regexStr, "i");
       if(regex.test(url)) {
         return true;
       }

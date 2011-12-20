@@ -14,38 +14,61 @@
  * limitations under the License.
  */
 
-loader= new DOMSnitch.Loader();
-loader.loadModule("DOMSnitch", "glue/DOMSnitch.js", false);
-loader.loadModule("DOMSnitch.Modules.Base", "modules/Base.js", false);
-loader.loadModule("DOMSnitch.Modules.Document", "modules/Document.js", false);
-loader.loadModule("DOMSnitch.Modules.Window", "modules/Window.js", false);
-loader.loadModule("DOMSnitch.Modules.XmlHttpRequest", "modules/XmlHttpRequest.js", false);
-loader.load();
+/** 
+ * Load these heuristics anyway as they are harmless to the page. 
+ */
 
-if(DOMSnitch.Heuristics.GlobalIdManager) {
-  var globalId = new DOMSnitch.Heuristics.GlobalIdManager();
+if(!window.LOADED) {
+  loader= new DOMSnitch.Loader();
+  loader.loadModule("DOMSnitch", "glue/DOMSnitch.js", false);
+  loader.loadModule("DOMSnitch.Modules.Base", "modules/Base.js", false);
+  loader.loadModule("DOMSnitch.Modules.XmlHttpRequest", "modules/XmlHttpRequest.js", false);
+  loader.load();
+
+
+  /*
+   * Create a list of the heuristics that we would want to always run. These
+   * heuristics must be completely harmless and must not impact the page's
+   * performance.
+   */
+  if(!window.hList) {
+    hList = [];
+  }
+  hList.push("Json");
+  hList.push("MixedContent");
+  hList.push("ReflectedInput");
+  hList.push("ScriptSource");
+  hList.push("ScriptInclusion");
+  
+  for(var i = 0 ; i < hList.length; i++) {
+    var hClass = DOMSnitch.Heuristics[hList[i]];
+    
+    if(!!hClass) {
+      hObj = new hClass();
+      hClass.loaded = true;
+    }
+  }
+  
+  window.LOADED = true;
 }
 
-if(DOMSnitch.Heuristics.HttpHeaders) {
-  var httpHeaders = new DOMSnitch.Heuristics.HttpHeaders();
-}
+/** 
+ * Only apply these heuristics if page is in scope. 
+ */
+if(!!window.IN_SCOPE) {
+  window.USE_DEBUG &= !!window.IN_SCOPE;
 
-if(DOMSnitch.Heuristics.Json) {
-  var json = new DOMSnitch.Heuristics.Json();
-}
-
-if(DOMSnitch.Heuristics.MixedContent) {
-  var mixedContent = new DOMSnitch.Heuristics.MixedContent();
-}
-
-if(DOMSnitch.Heuristics.ReflectedInput) {
-  var reflectedInput = new DOMSnitch.Heuristics.ReflectedInput();
-}
-
-if(DOMSnitch.Heuristics.ScriptSource) {
-  var scriptSource = new DOMSnitch.Heuristics.ScriptSource();
-}
-
-if(DOMSnitch.Heuristics.ScriptInclusion) {
-  var scriptInclusion = new DOMSnitch.Heuristics.ScriptInclusion();
+  loader.loadModule("DOMSnitch.Modules.Document", "modules/Document.js", false);
+  loader.loadModule("DOMSnitch.Modules.Window", "modules/Window.js", false);
+  loader.load();
+  
+  var hList = Object.getOwnPropertyNames(DOMSnitch.Heuristics);
+  for(var i = 0; i < hList.length; i++) {
+    var hClass = DOMSnitch.Heuristics[hList[i]];
+    
+    if(!!hClass && !hClass.loaded && !hClass.EXPERIMENTAL) {
+      hObj = new hClass();
+      hClass.loaded = true;
+    }
+  }
 }

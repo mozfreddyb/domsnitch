@@ -138,6 +138,10 @@ table .riskLow {
   background: #d9f2db;
 }
 
+table .starred {
+  background: #ffe97e;
+}
+
 table .warning {
   color: #f33;
 }

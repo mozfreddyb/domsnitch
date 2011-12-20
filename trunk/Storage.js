@@ -33,6 +33,7 @@ DOMSnitch.Storage = function(parent) {
 DOMSnitch.Storage.prototype = {
   _setId: function(id) {
     this._id = id > 0 ? id : 0;
+    this._parent.setFindingsCount(this._id);
     this._id++;
   },
   
@@ -55,7 +56,8 @@ DOMSnitch.Storage.prototype = {
   
   deleteAll: function() {
     this._worker.postMessage(JSON.stringify({type: "deleteAll"}));
-    this.getMaxId(this._setId.bind(this));    
+    this.getMaxId(this._setId.bind(this));
+    this._parent.setFindingsCount(0);
   },
   
   getMaxId: function(callback) {
@@ -73,6 +75,7 @@ DOMSnitch.Storage.prototype = {
   insert: function(record) {
     record.id = this._id++;
     this._worker.postMessage(JSON.stringify({type: "store", data: record}));
+    this._parent.setFindingsCount(record.id);
   },
   
   selectAll: function(colId, order, callback) {

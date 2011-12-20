@@ -32,7 +32,7 @@ DOMSnitch.Heuristics.ReflectedInput = function() {
   window.addEventListener("message", this._captureMessageEvents.bind(this), true);
   
   this._unescapedSearchData = unescape(location.search);
-  this._unescapedReferrerData = unescape(document.referrer).replace(location.hostname, "");
+  this._unescapedReferrerData = this._processReferrer(document.referrer);
   this._tokenizedSearchData = this._tokenizeHaystack(location.search);
   this._tokenizedReferrerData = this._tokenizeHaystack(document.referrer.replace(location.hostname, ""));
 }
@@ -51,10 +51,13 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
       data += "Post message data:\n" + postMsg.data;
       data += "\n\n-----\n\n";
       data += "Post message origin:\n" + postMsg.origin;
+    } else if(recordInfo.origData) {
+      data += "\n\n-----\n\n";
+      data += recordInfo.source + " data:\n" + recordInfo.origData;
     }
   
     var code = recordInfo.code ? recordInfo.code : 2; // Medium ranking
-    var notes = recordInfo.source +" data " + from + "found in displayed " + 
+    var notes = recordInfo.source + " data " + from + "found in displayed " + 
       recordInfo.sink + " [value(s): " + foundValues.join(", ") + "]\n";
     
     var record = {
@@ -115,10 +118,22 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
     if(attributes.length > 0) {
       //TODO(radi): Add check against local/session storage
       var haystacks = [
-        {name: "Hash", data: unescape(location.hash)},
-        {name: "Search", data: this._unescapedSearchData},
-        {name: "Referrer", data: this._unescapedReferrerData},
-        {name: "Cookie", data: unescape(document.cookie)},
+        {name: "Hash", data: unescape(location.hash), orig: location.hash},
+        {
+          name: "Search", 
+          data: this._unescapedSearchData, 
+          orig: location.search
+        },
+        {
+          name: "Referrer", 
+          data: this._unescapedReferrerData, 
+          orig: document.referrer
+        },
+        {
+          name: "Cookie", 
+          data: unescape(document.cookie), 
+          orig: document.cookie
+        },
         {name: "Post message", data: postMsgIndex}
       ];
       
@@ -132,6 +147,7 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
               sink: "attribute", 
               type: type, 
               elem: elem,
+              origData: haystack.orig,
               debugInfo: debugInfo
             },
             haystack.data,
@@ -150,10 +166,26 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
 
       //TODO(radi): Add check against local/session storage
       var haystacks = [
-        {name: "Hash", data: this._tokenizeHaystack(location.hash)},
-        {name: "Search", data: this._tokenizedSearchData},
-        {name: "Referrer", data: this._tokenizedReferrerData},
-        {name: "Cookie", data: this._tokenizeHaystack(document.cookie)},
+        {
+          name: "Hash", 
+          data: this._tokenizeHaystack(location.hash), 
+          orig: location.hash
+        },
+        {
+          name: "Search", 
+          data: this._tokenizedSearchData, 
+          orig: location.search
+        },
+        {
+          name: "Referrer", 
+          data: this._tokenizedReferrerData,
+          orig: document.referrer
+        },
+        {
+          name: "Cookie",
+          data: this._tokenizeHaystack(document.cookie),
+          orig: document.cookie
+        },
         {name: "Post message", data: postMsgIndex}
       ];
                      
@@ -167,6 +199,7 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
               sink: "innerHTML", 
               type: type, 
               elem: elem,
+              origData: haystack.orig,
               debugInfo: debugInfo
             },
             haystack.data,
@@ -198,7 +231,7 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
     }
 
     var minSize = inTextNode ? 3 : 1;
-    if(window.USE_DEBUG && !!recordInfo.debugInfo) {
+    if(!!window.USE_DEBUG && !!recordInfo.debugInfo) {
       var sink = this._dbg.getSink(recordInfo.debugInfo);
       if(!!sink) {
         minSize = 0;
@@ -268,10 +301,10 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
       
       //TODO(radi): Add check against local/session storage
       var haystacks = [
-        {name: "Hash", data: this._tokenizeHaystack(location.hash)},
-        {name: "Search", data: this._tokenizedSearchData},
-        {name: "Referrer", data: this._tokenizedReferrerData},
-        {name: "Cookie", data: this._tokenizeHaystack(document.cookie)},
+        {name: "Hash", data: this._tokenizeHaystack(location.hash), orig: location.hash},
+        {name: "Search", data: this._tokenizedSearchData, orig: location.search},
+        {name: "Referrer", data: this._tokenizedReferrerData, orig: document.referrer},
+        {name: "Cookie", data: this._tokenizeHaystack(document.cookie), orig: document.cookie},
         {name: "Post message", data: postMsgIndex}
       ];
                      
@@ -285,6 +318,7 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
               sink: "text", 
               type: this._type, 
               elem: elem,
+              origData: haystack.orig,
               debugInfo: debugInfo
             },
             haystack.data,
@@ -364,6 +398,16 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
         }
       }
     }
+  },
+  
+  _processReferrer: function(referrer) {
+    referrer = unescape(referrer);
+    var idx = referrer.indexOf("//");
+    referrer = referrer.substring(idx + 2);
+    idx = referrer.indexOf("/");
+    referrer = referrer.substring(idx);
+
+    return referrer;
   },
   
   _removeDuplicates: function(list) {

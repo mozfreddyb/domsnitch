@@ -41,22 +41,22 @@ DOMSnitch.Heuristics.MixedContent.prototype = {
   },
   
   _handleBeforeLoad: function(event) {
-    if(event.target.nodeName == "IFRAME") {
+    var nodeName = 
+        event.target.nodeName ? event.target.nodeName.toLowerCase() : ""; 
+    if(nodeName == "iframe") {
       return;
     }
     
     var code = 3; // High
-    if(event.target.nodeName == "IMG") {
+    if(nodeName == "img") {
       code = 1; // Low
-    } else if(event.target.nodeName == "AUDIO" ||
-        event.target.nodeName == "VIDEO") {
+    } else if(nodeName == "audio" || nodeName == "video") {
       code = 2; // Medium
     }
     
     
     if(location.protocol == "https:" && event.url.match(/^http:/i)) {
-      var elem = event.target.nodeName.toLowerCase();
-      var article = elem.match(/^[euioa]/) ? "an" : "a";
+      var article = nodeName.match(/^[euioa]/) ? "an" : "a";
       
       var attr = "";
       var found = false;
@@ -75,7 +75,7 @@ DOMSnitch.Heuristics.MixedContent.prototype = {
       
       var source = found ? "the " + attr.toUpperCase() + " attribute" : "a child element";
       var notes = "Mixed content through the " + source +" of " + article + 
-        " " + elem.toUpperCase() + " element.\n";
+        " " + nodeName.toUpperCase() + " element.\n";
       
       var data = "URL:\n" + event.url;
       data += "\n\n-----\n\n";

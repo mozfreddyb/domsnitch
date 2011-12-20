@@ -49,7 +49,7 @@ DOMSnitch.Export.GoogleDocs = function(parent, statusBar, scanVerbosity) {
   });
   
   // A hack to counter a bug in the ChromeExOAuth constructor
-  this._oauth.callback_page = "third_party/chrome_ex_oauth.html";  
+  this._oauth.callback_page = "/third_party/chrome_ex_oauth.html";  
 }
 
 DOMSnitch.Export.GoogleDocs.prototype = {

@@ -33,8 +33,11 @@ DOMSnitch.Heuristics.HttpHeaders.prototype = {
     for(var i = 0; i < metaElems.length; i++) {
       var elem = metaElems[i];
       metaElemsAsStr.push(elem.outerHTML);
-      if(elem.getAttribute("http-equiv").match(/^content-type$/i) &&
-         /charset=/i.test(elem.getAttribute("content"))) {
+      
+      var httpEquiv = elem.getAttribute("http-equiv");
+      var content = elem.getAttribute("content");
+      if((httpEquiv && httpEquiv.match(/^content-type$/i)) &&
+         (content && /charset=/i.test(content))) {
         return;
       }
     }

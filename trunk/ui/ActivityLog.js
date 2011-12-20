@@ -21,7 +21,8 @@ DOMSnitch.UI.ActivityLog = function(parent) {
   this._columnTitles = [
     {title: "Id", click: this._createSortByHandler("id", "asc", this)},
     {title: "URL", click: this._createSortByHandler("topLevelUrl", "asc", this)},
-    {title: "Type", click: this._createSortByHandler("type", "asc", this)}
+    {title: "Type", click: this._createSortByHandler("type", "asc", this)},
+    {title: ""}
   ];
   this._menuItems = [
     {title: this._getViewTitle(), click: this._handleMenuItemView.bind(this)},
@@ -165,13 +166,42 @@ DOMSnitch.UI.ActivityLog.prototype.displayRecord = function(record) {
   
   var document = this.document;
   var contentTable = document.getElementById("contentTable");
-
+  
   var recordHeader = this._createRecordHeader(record, this._isNestingEnabled());
+
+  // Add a hide and star buttons.
+  var hideButton = document.createElement("button");
+  hideButton.addEventListener("click", this.hideRecord.bind(recordHeader), true);
+  hideButton.textContent = "Hide";
+  
+  var starButton = document.createElement("button");
+  starButton.addEventListener("click", this.starRecord.bind(recordHeader.firstChild), true);
+  starButton.textContent = "Star this record";
+  
+  var hideCell = document.createElement("td");
+  hideCell.width = "150";
+  hideCell.appendChild(hideButton);
+  hideCell.appendChild(starButton);
+  recordHeader.appendChild(hideCell);
+  
   var recordBody = this._createRecordBody(record, this._isNestingEnabled());
   recordHeader.body = recordBody;
   
   contentTable.appendChild(recordHeader);
   contentTable.appendChild(recordBody);
+}
+
+DOMSnitch.UI.ActivityLog.prototype.hideRecord = function(event) {
+  var id = this.id.replace("[rr", "[fr");
+  var fullRow = this.ownerDocument.getElementById(id);
+  this.parentElement.removeChild(fullRow);
+  this.parentElement.removeChild(this);
+  event.stopPropagation();
+}
+
+DOMSnitch.UI.ActivityLog.prototype.starRecord = function(event) {
+  this.style.background = "#ffe97e";
+  event.stopPropagation();
 }
 
 DOMSnitch.UI.ActivityLog.prototype.queryStorageBy = function(colId, order) {

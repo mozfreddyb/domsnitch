@@ -36,7 +36,11 @@ DOMSnitch.UI.TabManager.prototype = {
       return this._activeTabs[tabId];
     }
     
-    return DOMSnitch.UI.TabManager.MODES.Standby;
+    return this._parent.configManager.defaultMode;
+  },
+  
+  hasFlag: function(mode, flag) {
+    return mode % flag == 0;
   },
   
   refreshConfig: function() {
@@ -58,18 +62,21 @@ DOMSnitch.UI.TabManager.prototype = {
   
   setMode: function(tabId, mode) {
     if(!(tabId in this._activeTabs)) {
-      this._activeTabs[tabId] = DOMSnitch.UI.TabManager.MODES.Standby;
+      this._activeTabs[tabId] = DOMSnitch.UI.TabManager.MODES.Unknown;
     }
-
+    
+    var currentMode = this._activeTabs[tabId];
     if(mode > 0) {
-      this._activeTabs[tabId] |= mode;
-    } else {
-      this._activeTabs[tabId] &= mode;
+      this._activeTabs[tabId] = currentMode * mode;
+    } else if(currentMode % mode == 0) {
+      this._activeTabs[tabId] = currentMode / mode;
     }
   }
 }
 
+/** Flags are set as prime numbers. */
 DOMSnitch.UI.TabManager.MODES = {
-  Standby: 0,
-  Passive: 1
+  Unknown: 0,
+  Standby: 3,
+  Passive: 5
 }

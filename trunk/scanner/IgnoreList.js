@@ -40,7 +40,7 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
   },
   
   _checkReflectedInput: function(rule, record) {
-    if(!rule.conditions || rule.conditions.length == 0) {
+    if(rule.conditions == undefined) {
       return false;
     }
     
@@ -55,7 +55,7 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
     if(term) {
       var haystack = record.scanInfo.notes.match(/[\w\s,]+\]\n$/);
       var terms = term.split(",");
-      for(var i = 0; i < terms.length; i++) {
+      for(var i = 0; !!haystack && i < terms.length; i++) {
         var regex = new RegExp("\\b" + terms[i] + "\\b", "i");
         if(regex.test(haystack[0])) {
           foundTerm = true;

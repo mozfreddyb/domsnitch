@@ -117,10 +117,10 @@ DOMSnitch.Loader.prototype = {
   },
   
   load: function() {
-    this._loadCode("snitch = new DOMSnitch({})");
+    this._loadCode("if(!window.snitch) { snitch = new DOMSnitch({})} else { snitch.loadModules()}");
   },
   
-  loadModule: function(moduleName, moduleSource, needsDOM) {
+  loadModule: function(moduleName, moduleSource) {
     if(window.DIR_PATH) {
       moduleSource = window.DIR_PATH + moduleSource;
     }
@@ -130,11 +130,6 @@ DOMSnitch.Loader.prototype = {
     xhr.send();
 
     var jscode = xhr.responseText;
-    if(needsDOM) {
-      document.addEventListener(
-        "DOMContentLoaded",this._asyncLoad.bind(this, jscode), true);
-    } else {
-      this._loadCode(jscode);
-    }
+    this._loadCode(jscode);
   }
 }

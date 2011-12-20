@@ -16,10 +16,14 @@
  
 {
   "name": "DOM Snitch",
-  "version": "0.734",
+  "version": "0.740",
   "description": "A passive reconnaissance tool inside the DOM (experimental)",
   "background_page": "base.html",
   "options_page": "ui/config/config.html",
+  "browser_action": {
+    "default_icon": "icons/plain.png", 
+    "default_popup": "ui/menu/menu.html"
+  },
   "permissions": [
     "tabs",
     "contextMenus",

@@ -17,24 +17,11 @@
 <html>
   <head>
     <title></title>
-    <link rel="stylesheet" type="text/css" href="richViewer.css" />
+    <link rel="stylesheet" type="text/css" href="menu.css" />
+    <script src="Base.js"></script>
+    <script src="Main.js"></script>
   </head>
-  <body onload="loadCheck()">
-    <div id="topMenu"></div>
-    <div id="contentPane">
-      <table id="contentTable">
-        <tr id="titleRow"></tr>
-      </table>
-    </div>
-    <div id="noIssues">No issues found yet</div>
-    <script>
-      function loadCheck() {
-        if(document.getElementById("titleRow").children.length == 0 
-            && window.name == "activityLog") {
-          var base = chrome.extension.getBackgroundPage().base;
-          base.showActivityLog();
-        }
-      }
-    </script>
+  <body onload="menu = new DOMSnitch.UI.Menu.Main()">
+    <div id="menu"></div>
   </body>
 </html>

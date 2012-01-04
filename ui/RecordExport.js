@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ DOMSnitch.UI.RecordExport.prototype.displayRecord = function(record) {
   
   var scanResults = this._scanner.checkOnDisplay(record);
   scanResults.code = this._scanner.stringifyStatusCode(scanResults.code);
-  record.env.cookie = "";
+  //record.env.cookie = "";
   
   recordBody.innerText = this._stringifyTextSection("Global ID", record.gid);
   recordBody.innerText += this._stringifyCodeSection("Passive checks", scanResults);

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -250,6 +250,33 @@ DOMSnitch.UI.Config.BasicsPage.prototype._buildOrigins = function(document) {
   return this._createSection(document, "Trusted origins", contents);  
 }
 
+DOMSnitch.UI.Config.BasicsPage.prototype._buildDebug = function(document) {
+  var enableDebug = function() {
+    var debug = document.getElementById("debug");
+    localStorage["ds-debug"] = debug.checked;
+  };
+  
+  // This is simplified HTML of the section.
+  var contents = [
+    {
+      tag: "input", 
+      attr: [
+        "id=debug", 
+        "type=checkbox", 
+        "checked=" + localStorage["ds-debug"]
+      ], 
+      click: enableDebug
+    },
+    {
+      tag: "label",
+      attr: ["for=debug"], 
+      text:"Enable the collection of debug traces. (May slow down pages)"
+    }
+  ];
+  
+  return this._createSection(document, "Debugging", contents);  
+}
+
 DOMSnitch.UI.Config.BasicsPage.prototype._buildExpDialog = function(document) {
   //TODO
   var contents = [
@@ -305,6 +332,7 @@ DOMSnitch.UI.Config.BasicsPage.prototype.render = function(document, canvas) {
   canvas.appendChild(this._buildHeuristics(document));
   canvas.appendChild(this._buildScope(document));
   canvas.appendChild(this._buildOrigins(document));
+  canvas.appendChild(this._buildDebug(document));
   canvas.appendChild(this._buildExpSection(document));
   canvas.appendChild(this._buildExpDialog(document));
 }

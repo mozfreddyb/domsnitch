@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
+
+/**
+ * Provide ignore rules capability to DOM Snitch. 
+ */
+
 DOMSnitch.Scanner.IgnoreList = function() {
 }
 
 DOMSnitch.Scanner.IgnoreList.prototype = {
+  /** 
+   * HTTP headers ignore capability. 
+   * Syntax: x-frame-options,charset 
+   */
   _checkHttpHeaders: function(rule, record) {
     if(!rule.conditions || rule.conditions.length == 0) {
       return false;
@@ -39,6 +48,10 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
     return false;
   },
   
+  /** 
+   * Reflected input ignore capability. 
+   * Syntax: term=foo;source=hash;sink=attribute 
+   */
   _checkReflectedInput: function(rule, record) {
     if(rule.conditions == undefined) {
       return false;
@@ -91,6 +104,39 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
     return foundTerm & foundSource & foundSink;
   },
   
+  /** 
+   * XPC monitor ignore capability. 
+   * Syntax: sameorigin,www.example.com,http://example.com 
+   */
+  _checkXpcMonitor: function(rule, record) {
+    if(!rule.conditions || rule.conditions.length == 0) {
+      return false;
+    }
+
+    var data = record.data.split("\n\n-----\n\n");
+    var postMsgOrigin = data && data[1] && data[1].split("\n")[1];
+    if(!postMsgOrigin) {
+      return false;
+    }
+    
+    var origins = rule.conditions.split(",");
+    var found = false;
+    for(var i = 0; !found && i < origins.length; i++) {
+      var needle = origins[i];
+      if(needle == "sameorigin") {
+        var regex = new RegExp("^" + postMsgOrigin, "i");
+        found = regex.test(record.documentUrl);
+      } else {
+        var regex = new RegExp(needle + "$", "i");
+        found = regex.test(postMsgOrigin);
+      }
+    }
+    
+    return found;
+  },
+  
+
+  
   _checkUrl: function(rule, url) {
     var urlStr = rule.url;
     urlStr = urlStr.replace(/\./g, "\\.");
@@ -113,6 +159,8 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
           ignore = ignore | this._checkReflectedInput(rule, record);
         } else if(record.type == "HTTP headers") {
           ignore = ignore | this._checkHttpHeaders(rule, record);
+        } else if(record.type == "XPC monitor") {
+          ignore = ignore | this._checkXpcMonitor(rule, record);
         }
       }
     }

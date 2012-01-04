@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 DOMSnitch.UI.Main = function() {
   this._appName = "DOM Snitch";
   this._configManager = new DOMSnitch.UI.ConfigManager(this);
+  this._configManager.applyConfig();
   this._checkVersion();
 
   this._heuristicsPath = "scanner/heuristics/";
@@ -24,18 +25,15 @@ DOMSnitch.UI.Main = function() {
   this._registeredHeuristics = [];
   this._storage = new DOMSnitch.Storage(this);
   this._tabManager = new DOMSnitch.UI.TabManager(this);
-  //this._contextMenu = new DOMSnitch.UI.ContextMenu(this);
   this._activityLog = new DOMSnitch.UI.ActivityLog(this);
   this._scanner = new DOMSnitch.Scanner();
   chrome.extension.onRequest.addListener(this._handleDismissRequest.bind(this));
   chrome.extension.onRequest.addListener(this._handleRecordCapture.bind(this));
   chrome.tabs.onUpdated.addListener(this._handleUpdatedTab.bind(this));
-  chrome.tabs.onUpdated.addListener(this._loadHeuristics.bind(this));
+  chrome.webNavigation.onBeforeNavigate.addListener(this._loadHeuristics.bind(this));
   
   chrome.browserAction.setBadgeBackgroundColor({color: [25, 99, 147, 255]});
   this._countMsg = " issues found!";
-  
-  this._configManager.applyConfig();
 }
 
 DOMSnitch.UI.Main.prototype = {
@@ -158,16 +156,28 @@ DOMSnitch.UI.Main.prototype = {
     if(this._configManager.defaultMode != undefined &&
           mode == DOMSnitch.UI.TabManager.Unknown) {
       this._tabManager.setMode(tabId, this._configManager.defaultMode);
-      this._contextMenu.updateMenuForTab(tabId, selectInfo);
     }
   },
   
-  _loadHeuristics: function(tabId, changeInfo, tab) {
-    var inScope = this._configManager.isUrlInScope(tab.url) &&
-        !!tab.url.match(/^https*:/i);
-    if(changeInfo.status == "loading" && inScope) {
+  _loadHeuristics: function(details) {
+    if(details.frameId != 0) {
+      return;
+    }
+    
+    var tabId = details.tabId;
+    var tabUrl = details.url;
+    var inScope = this._configManager.isUrlInScope(tabUrl) &&
+        !!tabUrl.match(/^https{0,1}:/i);
+    if(inScope) {
       chrome.tabs.executeScript(
           tabId, {code: "window.IN_SCOPE = true", allFrames: true});
+      chrome.tabs.executeScript(
+        tabId, 
+        {
+          code: "window.USE_DEBUG = " + this.configManager.useDebugging,
+          allFrames: true
+        }
+      );
       chrome.tabs.executeScript(
         tabId, 
         {file: this._heuristicsPath + "StartHeuristics.js", allFrames: true}
@@ -177,13 +187,12 @@ DOMSnitch.UI.Main.prototype = {
       if(mode != DOMSnitch.UI.TabManager.MODES.Standby &&
               window.localStorage["hideNotification"] != "true") {
         chrome.tabs.insertCSS(
-          tabId, {file: this._notifierPath + "notifier.css"});
+            tabId, {file: this._notifierPath + "notifier.css"});
         chrome.tabs.executeScript(
-          tabId, {code: "window.APP_NAME = '" + this.appName + "'"});
+            tabId, {code: "window.APP_NAME = '" + this.appName + "'"});
         chrome.tabs.executeScript(
             tabId, {file: this._notifierPath + "Notifier.js"});
       }
-
     }
   },
   

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ DOMSnitch.UI.ConfigManager = function(parent) {
     "mixedcontent": "Mixed content",
     "reflectedinput": "Reflected input",
     "untrustedcode": "Untrusted code",
-    "scriptinclusion": "Script inclusion"
+    "scriptinclusion": "Script inclusion",
+    "xpcmonitor": "XPC monitor"
   };
 }
 
@@ -35,6 +36,10 @@ DOMSnitch.UI.ConfigManager.prototype = {
   
   set defaultMode(value) {
     this._defaultMode = value;
+  },
+  
+  get useDebugging() {
+    return window.localStorage["ds-debug"] == "true";
   },
   
   _exportExtendedConfig: function(config) {
@@ -66,40 +71,45 @@ DOMSnitch.UI.ConfigManager.prototype = {
       url = chrome.extension.getURL("/ui/config/defaultConfig.json");
     }
     
-    var config = null;
-    try {
-      var timestamp = new Date(0);
-      var xhr = new XMLHttpRequest;
-      xhr.open("GET", url, false);
-      xhr.setRequestHeader("If-Modified-Since", timestamp.toUTCString());
-      xhr.send();
+    var handleResponse = function(event) {
+      var config = null;
+      var xhr = event.target;
+      if(xhr.readyState == 4) {
+        try {
+          config = xhr.responseText.replace(/\n/g, "");
+          
+          // Strip leading comments from the config file.
+          var idx = config.indexOf("/*");
+          if(idx == 0) {
+            idx = config.indexOf("*/") + 2;
+            if(idx > 1) {
+              config = config.substring(idx);
+            }
+          }
+          config = JSON.parse(config);
 
-      config = xhr.responseText.replace(/\n/g, "");
-      
-      // Strip leading comments from the config file.
-      var idx = config.indexOf("/*");
-      if(idx == 0) {
-        idx = config.indexOf("*/") + 2;
-        if(idx > 1) {
-          config = config.substring(idx);
+        } catch(e) {
+          var errMsg = "The specified configuration could not be loaded!"
+              + " Reverting to previous configuration.";
+          window.alert(errMsg);
+          config = false;
         }
+        
+        if(callback) {
+          window.setTimeout(callback, 10, config);
+        }
+        
+        this._loadConfig(config);
       }
-      config = JSON.parse(config);
-    } catch (e) {
-      var errMsg = "The specified configuration could not be loaded!" +
-      		" Reverting to previous configuration.";
-      window.alert(errMsg);
-      console.debug(config);
-      temp = config;
-      config = false;
-      console.error(e.stack);
-    }
-    
-    if(callback) {
-      window.setTimeout(callback, 10, config);
-    }
+    };
 
-    return config;
+    var timestamp = new Date(0);
+    var xhr = new XMLHttpRequest;
+    xhr.open("GET", url, true);
+    xhr.setRequestHeader("If-Modified-Since", timestamp.toUTCString());
+    xhr.addEventListener("readystatechange", handleResponse.bind(this), true);
+    xhr.send();
+
   },
   
   _isTypeInScope: function(type) {
@@ -114,24 +124,7 @@ DOMSnitch.UI.ConfigManager.prototype = {
     return !!inScope;
   },
   
-  _loadExtendedConfig: function(config) {
-    // This is a stub method for extensibility purposes.
-  },
-  
-  applyConfig: function(config, callback) {
-    var enableFlag = window.localStorage["ds-config-enable"];
-    if(enableFlag && enableFlag != "true") {
-      return;
-    }
-
-    if(!config) {
-      config = this._getConfigData(callback);
-    }
-    
-    if(!config) {
-      return;
-    }
-    
+  _loadConfig: function(config) {
     if(config.heuristics) {
       // Set the list of available heuristics and indicate the heuristics that
       // have been applied.
@@ -180,6 +173,23 @@ DOMSnitch.UI.ConfigManager.prototype = {
     }
     
     this._loadExtendedConfig(config);
+  },
+  
+  _loadExtendedConfig: function(config) {
+    // This is a stub method for extensibility purposes.
+  },
+  
+  applyConfig: function(config, callback) {
+    var enableFlag = window.localStorage["ds-config-enable"];
+    if(enableFlag && enableFlag != "true") {
+      return;
+    }
+
+    if(config) {
+      this._loadConfig(config);
+    } else {
+      this._getConfigData(callback);
+    }
   },
   
   exportConfig: function() {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,14 @@ DOMSnitch.UI.Config.IgnorePage.prototype._buildDialog = function(document) {
                       "hint=E.g.: x-frame-options,charset"
                     ],
                     text: "HTTP headers"
+                  },
+                  {
+                    tag: "option",
+                    attr: [
+                      "value=XPC monitor",
+                      "hint=E.g.: sameorigin,www.example.com,http://example.com"
+                    ],
+                    text: "XPC monitor"
                   }
                 ]
               }]

@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,25 +14,65 @@
  * limitations under the License.
  */
  
+/**
+ * Checks whether executable content, in the form of JavaScript, cascading
+ * style sheets, and Flash movies, is loaded from a trusted origin. 
+ */
 DOMSnitch.Heuristics.ScriptSource = function() {
+  this._dbg = DOMSnitch.Heuristics.LightDbg.getInstance();
   document.addEventListener("beforeload", this._checkScriptSource.bind(this), true);
-  document.addEventListener("beforeload", this._checkEmbedSource.bind(this), true);
+  document.addEventListener("beforeload", this._getEmbedSource.bind(this), true);
 }
 
 DOMSnitch.Heuristics.ScriptSource.prototype = {
-  _checkEmbedSource: function(event) {
-    if(event.target.nodeName != "EMBED" || event.url == "") {
+  _checkEmbedAttributes: function(elem, debugInfo) {
+    // Only checking Flash movies that are loaded over <embed/>.
+    // TODO(radi): Check Flash movies that are loaded over <object/>.
+    if(!elem.src.match(/\.swf$/i)) {
       return;
     }
     
-    var safeOrigins = [
-      location.hostname
-    ];
+    var code = 0;
+    var notes = "";
+    
+    var scriptAccess = elem.getAttribute("allowScriptAccess");
+    if(scriptAccess && !!scriptAccess.match(/^always$/i)) {
+      code = 2; // Medium
+      notes += "Loading Flash movie with allowScriptAccess set to \"always\".\n";
+    }
 
-    // Add the safe origins from crossdomain.xml
-    var xhr = new XMLHttpRequest;
-    xhr.open("GET", location.origin + "/crossdomain.xml", false);
-    xhr.send();
+    // Check content-type
+    var type = elem.getAttribute("type");
+    if(!type || !type.match(/^application\/x-shockwave-flash$/i)) {
+      code = 3; // High
+      notes += "Loading Flash movie using wrong content type.\n";
+    }
+    
+    if(code > 0) {
+      var data = "HTML:\n" + elem.outerHTML;
+      data += "\n\n-----\n\n";
+      data += "Raw stack trace:\n" + debugInfo;
+
+      var record = {
+        documentUrl: document.location.href,
+        type: "Untrusted code",
+        data: data,
+        callStack: [],
+        gid: elem.gid ? elem.gid : this._createGlobalId(elem),
+        env: {},
+        scanInfo: {
+          code: code,
+          notes: notes
+        }
+      };
+
+      this._report(record);
+    }
+  },
+  
+  _checkEmbedSource: function(elem, url, debugInfo, event) {
+    var xhr = event.target;
+    var safeOrigins = [location.hostname];
     
     var allowAccessDirectives = xhr.responseText.match(/<allow-access-from.*/g);
     for(var i = 0; allowAccessDirectives && i < allowAccessDirectives.length; i++) {
@@ -45,7 +85,6 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
       }
     }
     
-    var elem = event.target;
     var regex = new RegExp("^((http|https):){0,1}\\/\\/[\\w\\.-]*" +
       location.hostname.replace(".", "\\."), "i");
 
@@ -60,21 +99,19 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
     }
 
     if(!isTrustedSource) {
-      console.debug(event.url);
-      var data = "URL:\n" + event.url;
+      var data = "URL:\n" + url;
       data += "\n\n-----\n\n";
       data += "HTML:\n" + elem.outerHTML;
+      data += "\n\n-----\n\n";
+      data += "Raw stack trace:\n" + debugInfo;
 
       var record = {
         documentUrl: document.location.href,
         type: "Untrusted code",
         data: data,
         callStack: [],
-        gid: event.target.gid ? event.target.gid : this._createGlobalId(event.target),
-        env: {
-          location: document.location.href,
-          referrer: document.referrer
-        }
+        gid: elem.gid ? elem.gid : this._createGlobalId(elem),
+        env: {}
       };
 
       this._report(record);
@@ -86,7 +123,7 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
     var src = null;
     if(elem.nodeName == "SCRIPT") {
       src = elem.src;
-    } else if(elem.nodeName == "LINK" && event.url.match(/\.css$/)) {      
+    } else if(!!elem.nodeName.match(/^link$/i) && event.url.match(/\.css$/)) {      
       src = elem.href;
     } else {
       return;
@@ -99,17 +136,16 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
       var data = "URL:\n" + event.url;
       data += "\n\n-----\n\n";
       data += "HTML:\n" + elem.outerHTML;
+      data += "\n\n-----\n\n";
+      data += "Raw stack trace:\n" + this._dbg.collectStackTrace();
 
       var record = {
         documentUrl: document.location.href,
         type: "Untrusted code",
         data: data,
         callStack: [],
-        gid: event.target.gid ? event.target.gid : this._createGlobalId(event.target),
-        env: {
-          location: document.location.href,
-          referrer: document.referrer
-        }
+        gid: elem.gid ? elem.gid : this._createGlobalId(elem),
+        env: {}
       };
 
       this._report(record);
@@ -135,6 +171,30 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
     }
     
     return gid + elem.nodeName;
+  },
+  
+  _getEmbedSource: function(event) {
+    //TODO
+    var elem = event.target;
+    if(!elem.nodeName.match(/^embed$/i) || event.url == "") {
+      return;
+    }
+    
+    var debugInfo = this._dbg.collectStackTrace();
+    window.setTimeout(
+        this._checkEmbedAttributes.bind(this, elem, debugInfo), 10);
+    
+    // Add the safe origins from crossdomain.xml
+    var timestamp = new Date(0);
+    var xhr = new XMLHttpRequest;
+    xhr.open("GET", location.origin + "/crossdomain.xml", false);
+    xhr.setRequestHeader("If-Modified-Since", timestamp.toUTCString());
+    xhr.addEventListener(
+      "readystatechange",
+      this._checkEmbedSource.bind(this, elem, event.url, debugInfo),
+      true
+    );
+    xhr.send();
   },
   
   _getOwnTld: function(hostname) {

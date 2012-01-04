@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,8 +96,8 @@ DOMSnitch.UI.RichUI.prototype._createRecordBody = function(record, useNesting) {
 
   var dataContent = record.data && record.data.split("\n\n-----\n\n");
   bodyContent.appendChild(this._createSection("Data used:", dataContent, ""));
-  bodyContent.appendChild(
-    this._createSection("Stack trace:", record.callStack, "", null, true));
+  //bodyContent.appendChild(
+  //  this._createSection("Stack trace:", record.callStack, "", null, true));
 
   return recordBody;
 }
@@ -254,10 +254,17 @@ DOMSnitch.UI.RichUI.prototype._createDataSection = function(title, content) {
 
   section.appendChild(this._createHtmlElement("p", "recordCodeLine", title));
 
-  content = unescape(content).replace(/(.{150})/g, "$1\n");
-  section.appendChild(
-    this._createHtmlElement(
-      "pre", "recordCodeSnippet", content));
+  var polishedContent = unescape(content).replace(/(.{150})/g, "$1\n");
+  var contentElem = 
+      this._createHtmlElement("pre", "recordCodeSnippet", polishedContent);
+  if(title == "Raw stack trace:") {
+    contentElem.addEventListener("mouseover", this._handleMouseOver.bind(this));
+    contentElem.addEventListener("mouseout", this._handleMouseOut.bind(this));
+    contentElem.addEventListener(
+        "click", this._handleStackTraceClick.bind(this, content));
+    contentElem.title = "Click to show executed code.";
+  }
+  section.appendChild(contentElem);
 
   return section;
 }
@@ -286,6 +293,11 @@ DOMSnitch.UI.RichUI.prototype._handleMouseOver = function(event) {
 DOMSnitch.UI.RichUI.prototype._handleMouseOut = function(event) {
   this.document.body.style.cursor = "auto";
 }
+
+DOMSnitch.UI.RichUI.prototype._handleStackTraceClick = function(trace, event) {
+  new DOMSnitch.UI.StackTrace(this._parent, trace);
+}
+
 
 DOMSnitch.UI.RichUI.prototype._hideNoIssuesMessage = function() {
   var noIssuesDiv = this.document.getElementById("noIssues");

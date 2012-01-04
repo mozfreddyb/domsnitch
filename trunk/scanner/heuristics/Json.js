@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
  
 DOMSnitch.Heuristics.Json = function() {
-  document.addEventListener("Eval", this._handleEval.bind(this), true);
   this._htmlElem = document.documentElement;
+  this._dbg = DOMSnitch.Heuristics.LightDbg.getInstance();
+  document.addEventListener("Eval", this._handleEval.bind(this), true);
 }
 
 DOMSnitch.Heuristics.Json.prototype = {
@@ -73,16 +74,16 @@ DOMSnitch.Heuristics.Json.prototype = {
     
     if(code > 1) {
       var data = "JSON object:\n" + recordInfo.jsData;
+      data += "\n\n-----\n\n";
+      data += "Raw stack trace:\n" + recordInfo.debugInfo;
+
       var record = {
         documentUrl: location.href,
         type: recordInfo.type,
         data: data,
         callStack: [],
         gid: recordInfo.globalId,
-        env: {
-          location: document.location.href,
-          referrer: document.referrer
-        },
+        env: {},
         scanInfo: {code: code, notes: notes}
       };
                         
@@ -94,6 +95,7 @@ DOMSnitch.Heuristics.Json.prototype = {
     var args = JSON.parse(this._htmlElem.getAttribute("evalArgs"));
     var code = args[0];
     var globalId = this._htmlElem.getAttribute("evalGid");
+    var debugInfo = this._dbg.collectStackTrace();
     
     this._htmlElem.removeAttribute("evalArgs");
     this._htmlElem.removeAttribute("evalGid");
@@ -101,7 +103,12 @@ DOMSnitch.Heuristics.Json.prototype = {
     window.setTimeout(
       this._checkJsonValidity.bind(
         this, 
-        {jsData: code, globalId: globalId, type: "Invalid JSON"}
+        {
+          jsData: code, 
+          globalId: globalId, 
+          type: "Invalid JSON", 
+          debugInfo: debugInfo
+        }
       ),
       10
     );

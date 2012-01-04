@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
  
 DOMSnitch.Heuristics.MixedContent = function() {
+  this._dbg = DOMSnitch.Heuristics.LightDbg.getInstance();
   document.addEventListener("beforeload", this._handleBeforeLoad.bind(this), true);
 }
 
@@ -80,6 +81,9 @@ DOMSnitch.Heuristics.MixedContent.prototype = {
       var data = "URL:\n" + event.url;
       data += "\n\n-----\n\n";
       data += "HTML:\n" + event.target.outerHTML;
+      data += "\n\n-----\n\n";
+      data += "Raw stack trace:\n" + this._dbg.collectStackTrace();
+      
       
       var record = {
         documentUrl: document.location.href,

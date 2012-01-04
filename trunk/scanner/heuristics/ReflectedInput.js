@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
+
+/**
+ * Listen to DOM modification events and determine if rendered HTML appears in
+ * obvious user-controlled places such as address bar, cookies, or referrer.
+ */
 DOMSnitch.Heuristics.ReflectedInput = function() {
   this._dbg = DOMSnitch.Heuristics.LightDbg.getInstance();
   
@@ -55,6 +59,12 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
       data += "\n\n-----\n\n";
       data += recordInfo.source + " data:\n" + recordInfo.origData;
     }
+    
+    if(recordInfo.debugInfo) {
+      data += "\n\n-----\n\n";
+      data += "Raw stack trace:\n";
+      data += recordInfo.debugInfo;
+    }
   
     var code = recordInfo.code ? recordInfo.code : 2; // Medium ranking
     var notes = recordInfo.source + " data " + from + "found in displayed " + 
@@ -66,10 +76,7 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
       data: data,
       callStack: [],
       gid: elem.gid ? elem.gid : this._createGlobalId(elem),
-      env: {
-        location: document.location.href,
-        referrer: document.referrer,
-      },
+      env: {},
       scanInfo: {code: code, notes: notes}
     };
 
@@ -230,16 +237,8 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
       return;
     }
 
+    // Reduce noise due to normal text being rendered.
     var minSize = inTextNode ? 3 : 1;
-    if(!!window.USE_DEBUG && !!recordInfo.debugInfo) {
-      var sink = this._dbg.getSink(recordInfo.debugInfo);
-      if(!!sink) {
-        minSize = 0;
-      } else {
-        return;
-      }
-    }
-
     var foundValues = [];
     var valuesMap = {};
     var bannedParams = /^(true|false|org|com|http|https)$/i;
@@ -283,7 +282,6 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
     }
 
     if(foundValues.length > 0) {
-      //TODO(radi): Invoke debugger and determine if exploitable
       window.setTimeout(this._buildReport.bind(this, recordInfo, foundValues), 10);
     }
   },
@@ -301,10 +299,26 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
       
       //TODO(radi): Add check against local/session storage
       var haystacks = [
-        {name: "Hash", data: this._tokenizeHaystack(location.hash), orig: location.hash},
-        {name: "Search", data: this._tokenizedSearchData, orig: location.search},
-        {name: "Referrer", data: this._tokenizedReferrerData, orig: document.referrer},
-        {name: "Cookie", data: this._tokenizeHaystack(document.cookie), orig: document.cookie},
+        {
+          name: "Hash",
+          data: this._tokenizeHaystack(location.hash),
+          orig: location.hash
+        },
+        {
+          name: "Search",
+          data: this._tokenizedSearchData,
+          orig: location.search
+        },
+        {
+          name: "Referrer",
+          data: this._tokenizedReferrerData,
+          orig: document.referrer
+        },
+        {
+          name: "Cookie",
+          data: this._tokenizeHaystack(document.cookie),
+          orig: document.cookie
+        },
         {name: "Post message", data: postMsgIndex}
       ];
                      
@@ -353,9 +367,10 @@ DOMSnitch.Heuristics.ReflectedInput.prototype = {
   },
   
   _dbgStackFilter: function(stack) {
-    var stackArray = stack.split("    at ");
-    var stackFrame = stackArray[3];
-    return !!stackFrame && !!stackFrame.match(/^object\._createelement/i);
+    //var stackArray = stack.split("    at ");
+    //var stackFrame = stackArray[3];
+    //return !!stackFrame && !!stackFrame.match(/^object\._createelement/i);
+    return false;
   },
   
   _findOverlap: function(listA, listB, isSorted) {

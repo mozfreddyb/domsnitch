@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  
 {
   "name": "DOM Snitch",
-  "version": "0.740",
+  "version": "0.741",
   "description": "A passive reconnaissance tool inside the DOM (experimental)",
   "background_page": "base.html",
   "options_page": "ui/config/config.html",
@@ -26,10 +26,10 @@
   },
   "permissions": [
     "tabs",
-    "contextMenus",
     "http://*/*",
     "https://*/*",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "webNavigation"
   ],
   "content_scripts": [
     {
@@ -49,6 +49,7 @@
         "scanner/heuristics/Json.js",
         "scanner/heuristics/ScriptInclusion.js",
         "scanner/heuristics/HttpHeaders.js",
+        "scanner/heuristics/XpcMonitor.js",
         "scanner/heuristics/StartHeuristics.js"
       ],
       "run_at": "document_start",

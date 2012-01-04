@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Google Inc. All Rights Reserved.
+ * Copyright 2012 Google Inc. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ DOMSnitch.Scanner = function() {
   
   this._scanners = {
     "Untrusted code": [scriptSource]
-  };  
+  };
+  
+  // Heuristics that live inside the main extension.
+  this._heuristics = {
+  };
 }
 
 DOMSnitch.Scanner.prototype = {

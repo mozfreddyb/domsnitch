@@ -15,7 +15,6 @@
  */
  
 DOMSnitch.Heuristics.XhrCollector = function() {
-  this._htmlElem = document.documentElement;
   document.addEventListener("XMLHttpRequest", this._dispatch.bind(this), true);
 
   this._eventDiv = document.createElement("div");
@@ -24,9 +23,10 @@ DOMSnitch.Heuristics.XhrCollector = function() {
 }
 
 DOMSnitch.Heuristics.XhrCollector.prototype = {
-  _dispatch: function() {
-    var xhr = JSON.parse(this._htmlElem.getAttribute("xhrData"));
-    this._htmlElem.removeAttribute("xhrData");
+  _dispatch: function(event) {
+    var elem = event.target.documentElement;
+    var xhr = JSON.parse(elem.getAttribute("xhrData"));
+    elem.removeAttribute("xhrData");
     
     var event = document.createEvent("Event");
     event.initEvent("xhrCollector", true, true);

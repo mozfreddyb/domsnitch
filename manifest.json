@@ -16,7 +16,7 @@
  
 {
   "name": "DOM Snitch",
-  "version": "0.741",
+  "version": "0.743",
   "description": "A passive reconnaissance tool inside the DOM (experimental)",
   "background_page": "base.html",
   "options_page": "ui/config/config.html",
@@ -49,11 +49,13 @@
         "scanner/heuristics/Json.js",
         "scanner/heuristics/ScriptInclusion.js",
         "scanner/heuristics/HttpHeaders.js",
+        "scanner/heuristics/Plugins.js",
         "scanner/heuristics/XpcMonitor.js",
         "scanner/heuristics/StartHeuristics.js"
       ],
       "run_at": "document_start",
       "all_frames": true
     }
-  ]
+  ],
+  "content_security_policy": "default-src 'self'; script-src 'unsafe-inline' 'self'; connect-src 'self' http: https:"
 }

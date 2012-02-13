@@ -39,6 +39,7 @@ if(!window.LOADED) {
   hList.push("ReflectedInput");
   hList.push("ScriptSource");
   hList.push("ScriptInclusion");
+  hList.push("Plugins");
   
   for(var i = 0 ; i < hList.length; i++) {
     var hClass = DOMSnitch.Heuristics[hList[i]];

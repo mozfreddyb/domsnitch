@@ -25,7 +25,8 @@ DOMSnitch.UI.ConfigManager = function(parent) {
     "reflectedinput": "Reflected input",
     "untrustedcode": "Untrusted code",
     "scriptinclusion": "Script inclusion",
-    "xpcmonitor": "XPC monitor"
+    "xpcmonitor": "XPC monitor",
+    "plugins": "Plug-ins"
   };
 }
 
@@ -234,6 +235,9 @@ DOMSnitch.UI.ConfigManager.prototype = {
     if(scope.length == 0) {
       return true;
     }
+    
+    // Remove location.search and location.hash.
+    url = url.replace(/[?#].*$/i, "");
     
     for(var i = 0; i < scope.length; i++) {
       var regexStr = scope[i];

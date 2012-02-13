@@ -44,10 +44,12 @@ DOMSnitch.Modules.Document = function(parent) {
   this.beforeDocumentWriteEvt.initEvent("BeforeDocumentWrite", true, true);
   this.documentWriteEvt = document.createEvent("Event");
   this.documentWriteEvt.initEvent("DocumentWrite", true, true);
+  this.documentDomainEvt = document.createEvent("Event");
+  this.documentDomainEvt.initEvent("DocumentDomain", true, true);
   
   this._shadowElem = document.createElement("div");
   this._shadowElem.style.display = "none";
-  document.documentElement.appendChild(this._shadowElem);
+  //document.documentElement.appendChild(this._shadowElem);
 }
 
 DOMSnitch.Modules.Document.prototype = new DOMSnitch.Modules.Base;
@@ -60,8 +62,9 @@ DOMSnitch.Modules.Document.prototype._createElement = function() {
   return elem;
 }
 
-DOMSnitch.Modules.Document.prototype._createMethod = 
-    function(module, type, target, callback) {
+DOMSnitch.Modules.Document.prototype._createDocumentWrite = function(targetName) {
+  var module = this;
+  var target = this._targets[targetName];
   return function(data) {
     document.dispatchEvent(module.beforeDocumentWriteEvt);
     var retVal = target.origPtr.apply(this, arguments);
@@ -72,6 +75,14 @@ DOMSnitch.Modules.Document.prototype._createMethod =
   };
 }
 
+DOMSnitch.Modules.Document.prototype._createDocumentDomain = function() {
+  var module = this;
+  return function(value) {
+    module.htmlElem.setAttribute("docDomain", module._parent.JSON.stringify(value));
+    document.dispatchEvent(module.documentDomainEvt);
+  }
+}
+
 DOMSnitch.Modules.Document.prototype.load = function() {
   this.config = this._parent.config;
   
@@ -79,10 +90,13 @@ DOMSnitch.Modules.Document.prototype.load = function() {
     return;
   }
   
-  this._overloadMethod("document.write", "doc.write");
-  this._overloadMethod("document.writeln", "doc.write");
+  this._overloadMethod(
+      "document.write", "doc.write", this._createDocumentWrite("document.write"));
+  this._overloadMethod(
+      "document.writeln", "doc.write", this._createDocumentWrite("document.writeln"));
   //this._overloadMethod(
   //  "document.createElement", "doc.createElem", this._createElement.bind(this));
+  document.__defineSetter__("domain", this._createDocumentDomain());
 
   this._loaded = true;
 }

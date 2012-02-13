@@ -25,7 +25,8 @@
     "reflectedInput",
     "untrustedCode",
     "scriptInclusion",
-    "xpcMonitor"
+    "xpcMonitor",
+    "plugins"
   ],
   "safeOrigins" : [],
   "ignoreRules" : [

@@ -262,6 +262,10 @@ DOMSnitch.UI.Config.IgnorePage.prototype._listRules = function(ignoreRules) {
     
     table.appendChild(row);
   }
+  
+  var page = chrome.extension.getBackgroundPage();
+  page.base.showActivityLog();
+  window.focus();
 }
 
 /** Page initialization */

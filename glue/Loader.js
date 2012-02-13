@@ -15,104 +15,24 @@
  */
 
 window.DIR_PATH = "";
-window.USE_DEBUG = false;
+window.USE_DEBUG = true;
 
 DOMSnitch.Loader = function() {
-  this._htmlElem = document.documentElement;
   this._modules = {};
-  
-  this._extToPageEvt = document.createEvent("Event");
-  this._extToPageEvt.initEvent(DOMSnitch.COMM_STR["e-ext2page"], true, true);
-  this._htmlElem.addEventListener(DOMSnitch.COMM_STR["e-page2ext"], this._receiveFromPage.bind(this));
-  chrome.extension.onRequest.addListener(this._receiveFromExt.bind(this));
-  
-  var dsloader = function() {
-    var htmlElem = document.documentElement;
-    htmlElem.addEventListener(
-      "dsloader",
-      function() {
-        var htmlElem = document.documentElement;
-        var code = JSON.parse(htmlElem.getAttribute("dscode"));
-
-        eval(code);
-
-        htmlElem.removeAttribute("dscode");
-      }
-    );
-  };
-  
-  //this._runCodeThroughRootElement("dsloader = " + dsloader.toString());
-  //this._runCodeThroughRootElement("dsloader()");
+  this._codeBuff = [];
 }
 
 DOMSnitch.Loader.prototype = {
-  _asyncLoad: function(jscode) {
-    this._runCodeThroughNewElement(jscode);
-    this._runCodeThroughNewElement("snitch = new DOMSnitch({})");
-  },
-  
   _loadCode: function(jscode) {
-    /*
-    if(document.body) {
-      this._runCodeThroughNewElement(jscode);
+    this._codeBuff.push(jscode);
+    if(document.documentElement) {
+      var scriptElem = document.createElement("script");
+      scriptElem.textContent = this._codeBuff.join("\n");
+      this._codeBuff = [];
+      document.documentElement.appendChild(scriptElem);
+      document.documentElement.removeChild(scriptElem);
     } else {
-      this._runCodeThroughEvent(jscode);
-    }
-    */
-    this._runCodeThroughNewElement(jscode);
-  },
-
-  _receiveFromExt: function(request, sender, sendResponse) {
-    this._alive = request.type == "config" ? true : this._alive;
-    this._sendToPage(request);
-  },
-  
-  _receiveFromPage: function() {
-    var objAsStr = this._htmlElem.getAttribute(DOMSnitch.COMM_STR["d-page2ext"]);
-
-    if(!objAsStr || objAsStr == "") {
-      return;
-    }
-    
-    var obj = window.JSON.parse(objAsStr);
-    if(obj.type == "log") {
-      this._sendToExt(obj);
-    }
-    
-    this._htmlElem.removeAttribute(DOMSnitch.COMM_STR["d-page2ext"]);
-  },
-  
-  _runCodeThroughEvent: function(jscode) {
-    this._htmlElem.setAttribute("dscode", JSON.stringify(jscode));
-    var event = document.createEvent("Event");
-    event.initEvent("dsloader", true, true);
-    this._htmlElem.dispatchEvent(event);
-  },
-  
-  _runCodeThroughNewElement: function(jscode) {
-    var scriptElem = document.createElement("script");
-    scriptElem.textContent = jscode;
-    document.documentElement.appendChild(scriptElem);
-    document.documentElement.removeChild(scriptElem);
-  },
-  
-  _runCodeThroughRootElement: function(jscode) {
-    this._htmlElem.setAttribute("oncut", "(function(){eval(" + jscode + ")}).call()");
-    this._htmlElem.oncut();
-    this._htmlElem.removeAttribute("oncut");
-  },
-  
-  _sendToExt: function(obj) {
-    chrome.extension.sendRequest(obj);
-  },
-  
-  _sendToPage: function(obj) {
-    try {
-      var objAsStr = window.JSON.stringify(obj);
-      this._htmlElem.setAttribute(DOMSnitch.COMM_STR["d-ext2page"], objAsStr);
-      this._htmlElem.dispatchEvent(this._extToPageEvt);
-    } catch (e) {
-      console.error("DOM Snitch: " + e.toString());
+      window.setTimeout(this._loadCode.bind(this, ""), 100);
     }
   },
   

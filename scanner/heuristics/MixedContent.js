@@ -44,12 +44,11 @@ DOMSnitch.Heuristics.MixedContent.prototype = {
   _handleBeforeLoad: function(event) {
     var nodeName = 
         event.target.nodeName ? event.target.nodeName.toLowerCase() : ""; 
-    if(nodeName == "iframe") {
-      return;
-    }
     
     var code = 3; // High
-    if(nodeName == "img") {
+    if(nodeName == "img" || nodeName == "iframe") {
+      // Images and IFrames provide visual indicators to users. If tampered
+      // during transit, they can mislead users to perform insecure actions.
       code = 1; // Low
     } else if(nodeName == "audio" || nodeName == "video") {
       code = 2; // Medium

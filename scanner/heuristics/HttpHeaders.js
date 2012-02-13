@@ -14,18 +14,21 @@
  * limitations under the License.
  */
  
+/**
+ * Check the page's own HTTP headers and look for irregularities (such as
+ * missing charset, missing security headers, etc.) there.
+ */
 DOMSnitch.Heuristics.HttpHeaders = function() {
   window.setTimeout(this._checkOwnHeaders.bind(this), 10);
 }
 
 DOMSnitch.Heuristics.HttpHeaders.prototype = {
-  _checkCharacterSet: function(responseHeaders) {
-    for(var i = 0; i < responseHeaders.length; i++) {
-      if(/^content-type:\s.*charset=/i.test(responseHeaders[i]) ||
-         /^content-type: image\//i.test(responseHeaders[i]) ||
-         /^content-length: 0$/i.test(responseHeaders[i])) {
-        return;
-      }
+  _checkCharacterSet: function(xhr) {
+    var contentTypeHeader = xhr.getResponseHeader("content-type");
+    var contentLengthHeader = xhr.getResponseHeader("content-length");
+    if(/^.*charset=/i.test(contentTypeHeader) ||
+       /^image/i.test(contentTypeHeader) || contentLengthHeader == "0") {
+      return;
     }
     
     var metaElems = document.getElementsByTagName("meta");
@@ -36,13 +39,17 @@ DOMSnitch.Heuristics.HttpHeaders.prototype = {
       
       var httpEquiv = elem.getAttribute("http-equiv");
       var content = elem.getAttribute("content");
-      if((httpEquiv && httpEquiv.match(/^content-type$/i)) &&
-         (content && /charset=/i.test(content))) {
+      if((!!httpEquiv && httpEquiv.match(/^content-type$/i)) &&
+         (!!content && /charset=/i.test(content))) {
+        return;
+      }
+      
+      if(!!elem.getAttribute("charset")) {
         return;
       }
     }
     
-    var reportData = "Response headers:\n" + responseHeaders.join("\n");
+    var reportData = "Response headers:\n" + xhr.getAllResponseHeaders();
     reportData += "\n\n-----\n\nHTML document meta:\n";
     reportData += metaElems.length > 0 ? metaElemsAsStr.join("\n") : "(none)";
     
@@ -51,28 +58,27 @@ DOMSnitch.Heuristics.HttpHeaders.prototype = {
     this._report(reportData, code, notes);
   },
   
-  _checkContentTypeOptions: function(responseHeaders) {
-    for(var i = 0; i < responseHeaders.length; i++) {
-      if(/^x-content-type-options:\s+nosniff/i.test(responseHeaders[i])) {
-        return;
-      }
+  _checkContentTypeOptions: function(xhr) {
+    var ctHeader = xhr.getResponseHeader("content-type");
+    var xctoHeader = xhr.getResponseHeader("x-content-type-options");
+    if(/^text\/html/.test(ctHeader) || /^nosniff/i.test(xctoHeader)) {
+      return;
     }
 
-    var reportData = "Response headers:\n" + responseHeaders.join("\n");
+    var reportData = "Response headers:\n" + xhr.getAllResponseHeaders();
     
     var code = 2; // Medium
     var notes = "The X-Content-Type-Options header is missing or not properly set.\n";
     this._report(reportData, code, notes);
   },
 
-  _checkFrameOptions: function(responseHeaders) {
-    for(var i = 0; i < responseHeaders.length; i++) {
-      if(/^x-frame-options:\s(sameorigin|deny)/i.test(responseHeaders[i])) {
-        return;
-      }
+  _checkFrameOptions: function(xhr) {
+    var xfoHeader = xhr.getResponseHeader("x-frame-options");
+    if(/^(sameorigin|deny)/i.test(xfoHeader)) {
+      return;
     }
 
-    var reportData = "Response headers:\n" + responseHeaders.join("\n");
+    var reportData = "Response headers:\n" + xhr.getAllResponseHeaders();
     
     var code = 2; // Medium
     var notes = "The X-Frame-Options header is missing or not properly set.\n";
@@ -83,11 +89,15 @@ DOMSnitch.Heuristics.HttpHeaders.prototype = {
     var xhr = new XMLHttpRequest;
     xhr.open("GET", location.href, false);
     xhr.send();
-    
-    var responseHeaders = xhr.getAllResponseHeaders().split("\n");
-    window.setTimeout(this._checkCharacterSet.bind(this, responseHeaders), 10);
-    window.setTimeout(this._checkFrameOptions.bind(this, responseHeaders), 10);
-    window.setTimeout(this._checkContentTypeOptions.bind(this, responseHeaders), 10);
+
+    // Return if the document is empty.
+    if(xhr.responseText.length == 0) {
+      return;
+    }
+
+    window.setTimeout(this._checkCharacterSet.bind(this, xhr), 10);
+    window.setTimeout(this._checkFrameOptions.bind(this, xhr), 10);
+    window.setTimeout(this._checkContentTypeOptions.bind(this, xhr), 10);
   },
   
   _report: function(reportData, code, notes) {

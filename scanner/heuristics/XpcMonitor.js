@@ -23,17 +23,36 @@ DOMSnitch.Heuristics.XpcMonitor = function() {
   window.addEventListener("message", this._reportPostMsg.bind(this), true);
   window.addEventListener(
       "hashchange", this._reportHashChange.bind(this), true);
+  document.addEventListener(
+      "DocumentDomain", this._reportDocDomainChange.bind(this), true);
   
   this._reportInitHash();
 }
 
 DOMSnitch.Heuristics.XpcMonitor.prototype = {
+  _reportDocDomainChange: function(event) {
+    //TODO
+    var elem = event.target.documentElement;
+    var domainData = JSON.parse(elem.getAttribute("docDomain"));
+    elem.removeAttribute("docDomain");
+    
+    var data = "Old document.domain value:\n" + document.domain;
+    data += "\n\n-----\n\n";
+    data += "New document.domain value:\n" + domainData;
+    
+    var code = 3; // High
+    var notes = "An attempt to overwrite document.domain to " + domainData + ".\n";
+    
+    this._report(data, code, notes);
+  },
+  
   _reportHashChange: function(event) {
     if(window.top && window.top.location == window.location) {
       return;
     }
     
     var data = "";
+    var code = 1; // Low
     var oldData = event.oldURL.match(/#.*$/);
     data += "Old hash data:\n" + (oldData ? oldData[0] : "(blank)");
     data += "\n\n-----\n\n";
@@ -43,7 +62,7 @@ DOMSnitch.Heuristics.XpcMonitor.prototype = {
     var notes = "Location.hash has changed to \""
         + window.location.hash + "\"\n";
     
-    this._report(data, notes);
+    this._report(data, code, notes);
   },
   
   _reportInitHash: function() {
@@ -53,10 +72,11 @@ DOMSnitch.Heuristics.XpcMonitor.prototype = {
     
     if(window.location.hash.length > 0) {
       var data = "Initial hash data:\n" + window.location.hash;
+      var code = 1; // Low
       var notes = "Initial location.hash set to \""
           + window.location.hash + "\"\n";
       
-      this._report(data, notes);
+      this._report(data, code, notes);
     }
   },
   
@@ -65,11 +85,12 @@ DOMSnitch.Heuristics.XpcMonitor.prototype = {
     data += "\n\n-----\n\n";
     data += "Post message origin:\n" + event.origin;
 
+    var code = 1; // Low
     var notes = "Incoming post message from " + event.origin + "\n";
-    this._report(data, notes);
+    this._report(data, code, notes);
   },
   
-  _report: function(data, notes) {
+  _report: function(data, code, notes) {
     var record = {
       documentUrl: document.location.href,
       type: "XPC monitor",
@@ -78,7 +99,7 @@ DOMSnitch.Heuristics.XpcMonitor.prototype = {
       gid: document.location.href + "#xpcMonitor",
       env: {},
       scanInfo: {
-        code: 1, // Low
+        code: code,
         notes: notes
       }
     };

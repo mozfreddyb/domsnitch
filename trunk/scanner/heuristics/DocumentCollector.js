@@ -15,7 +15,6 @@
  */
  
 DOMSnitch.Heuristics.DocumentCollector = function() {
-  this._htmlElem = document.documentElement;
   document.addEventListener("DocumentWrite", this._dispatch.bind(this), true);
 
   this._eventDiv = document.createElement("div");
@@ -24,9 +23,10 @@ DOMSnitch.Heuristics.DocumentCollector = function() {
 }
 
 DOMSnitch.Heuristics.DocumentCollector.prototype = {
-  _dispatch: function() {
-    var docData = JSON.parse(this._htmlElem.getAttribute("docData"));
-    this._htmlElem.removeAttribute("docData");
+  _dispatch: function(event) {
+    var elem = event.target.documentElement;
+    var docData = JSON.parse(elem.getAttribute("docData"));
+    elem.removeAttribute("docData");
     
     var event = document.createEvent("Event");
     event.initEvent("docCollector", true, true);

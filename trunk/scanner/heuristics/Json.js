@@ -15,9 +15,17 @@
  */
  
 DOMSnitch.Heuristics.Json = function() {
-  this._htmlElem = document.documentElement;
+  /*
   this._dbg = DOMSnitch.Heuristics.LightDbg.getInstance();
   document.addEventListener("Eval", this._handleEval.bind(this), true);
+  */
+  
+  // Workaround for eval().
+  // More info at http://radi.r-n-d.org/2011/02/evil-magic-of-eval.html
+  var collector = DOMSnitch.Heuristics.XhrCollector.getInstance();
+  collector.addListener(this._checkXhr.bind(this));
+  
+  window.addEventListener("message", this._checkPostMsg.bind(this), true);
 }
 
 DOMSnitch.Heuristics.Json.prototype = {
@@ -36,9 +44,6 @@ DOMSnitch.Heuristics.Json.prototype = {
     if(jsData[0] == "(" && jsData[jsData.length - 1] == ")") {
       jsData = jsData.substring(1, jsData.length - 1);
     }
-
-    //var seemsJSON = /^\{.+\}$/.test(jsData) || /^\[.+\]$/.test(jsData);
-    //seemsJSON = /this\.[\w_\s]+=['"\w\s]+;/.test(jsData) ? false : seemsJSON;
 
     if(this._isJson(jsData)) {
       try {
@@ -74,8 +79,10 @@ DOMSnitch.Heuristics.Json.prototype = {
     
     if(code > 1) {
       var data = "JSON object:\n" + recordInfo.jsData;
-      data += "\n\n-----\n\n";
-      data += "Raw stack trace:\n" + recordInfo.debugInfo;
+      if(!!recordInfo.debugInfo) {
+        data += "\n\n-----\n\n";
+        data += "Raw stack trace:\n" + recordInfo.debugInfo;        
+      }
 
       var record = {
         documentUrl: location.href,
@@ -91,14 +98,48 @@ DOMSnitch.Heuristics.Json.prototype = {
     }    
   },
   
+  _checkPostMsg: function(event) {
+    var code = this._stripBreakers(event.data);
+    var globalId = event.origin + "#InvalidJson";
+    window.setTimeout(
+      this._checkJsonValidity.bind(
+        this, 
+        {
+          jsData: code, 
+          globalId: globalId, 
+          type: "Invalid JSON" 
+        }
+      ),
+      10
+    );
+  },
+  
+  _checkXhr: function(event) {
+    var xhr = event.xhr;
+    var code = this._stripBreakers(xhr.responseBody);
+    var globalId = xhr.requestUrl + "#InvalidJson";
+    window.setTimeout(
+      this._checkJsonValidity.bind(
+        this, 
+        {
+          jsData: code, 
+          globalId: globalId, 
+          type: "Invalid JSON" 
+        }
+      ),
+      10
+    );
+  },
+  
   _handleEval: function(event) {
-    var args = JSON.parse(this._htmlElem.getAttribute("evalArgs"));
+    var elem = event.target.documentElement;
+    var args = JSON.parse(elem.getAttribute("evalArgs"));
     var code = args[0];
-    var globalId = this._htmlElem.getAttribute("evalGid");
+    var globalId = elem.getAttribute("evalGid");
     var debugInfo = this._dbg.collectStackTrace();
     
-    this._htmlElem.removeAttribute("evalArgs");
-    this._htmlElem.removeAttribute("evalGid");
+    elem.removeAttribute("evalArgs");
+    elem.removeAttribute("evalGid");
     
     window.setTimeout(
       this._checkJsonValidity.bind(
@@ -125,5 +166,14 @@ DOMSnitch.Heuristics.Json.prototype = {
   
   _report: function(obj) {
     chrome.extension.sendRequest({type: "log", record: obj});
-  }  
+  },
+  
+  _stripBreakers: function(jsData) {
+    var cIdx = jsData.indexOf("{");
+    var aIdx = jsData.indexOf("[");
+    idx = cIdx > -1 && cIdx < idx ? cIdx : idx;
+    idx = aIdx > -1 && aIdx < idx ? aIdx : idx;
+    
+    return jsData.substring(idx);
+  }
 }

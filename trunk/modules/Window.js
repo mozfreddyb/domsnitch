@@ -34,7 +34,10 @@ DOMSnitch.Modules.Window = function(parent) {
 
 DOMSnitch.Modules.Window.prototype = new DOMSnitch.Modules.Base;
 
-DOMSnitch.Modules.Window.prototype._createMethod = function(module, type, target, callback) {
+DOMSnitch.Modules.Window.prototype._createEval = function() {
+  var module = this;
+  var target = this._targets["window.eval"];
+  var type = "win.eval";
   return function() {
     module.htmlElem.setAttribute("evalArgs", module._parent.JSON.stringify(arguments));
     module.htmlElem.setAttribute("evalGid", module.generateGlobalId(type));
@@ -67,7 +70,7 @@ DOMSnitch.Modules.Window.prototype.load = function() {
     return;
   }
 
-  //this._overloadMethod("window.eval", "win.eval");
+  //this._overloadMethod("window.eval", "win.eval", this._createEval());
   this._loaded = true;
 }
 

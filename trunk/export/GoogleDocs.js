@@ -44,7 +44,7 @@ DOMSnitch.Export.GoogleDocs = function(parent, statusBar, scanVerbosity) {
     "access_url": "https://www.google.com/accounts/OAuthGetAccessToken",
     "consumer_key": "anonymous",
     "consumer_secret": "anonymous",
-    "scope": "https://spreadsheets.google.com/feeds/ https://docs.google.com/feeds/",
+    "scope": "https://docs.google.com/feeds/ https://spreadsheets.google.com/feeds/ https://docs.googleusercontent.com/",
     "app_name": parent.appName
   });
   

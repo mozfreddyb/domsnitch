@@ -25,27 +25,40 @@ DOMSnitch.Heuristics.ScriptSource = function() {
 }
 
 DOMSnitch.Heuristics.ScriptSource.prototype = {
-  _checkEmbedAttributes: function(elem, debugInfo) {
+  _checkEmbedAttributes: function(elem, url, debugInfo) {
     // Only checking Flash movies that are loaded over <embed/>.
-    // TODO(radi): Check Flash movies that are loaded over <object/>.
-    if(!elem.src.match(/\.swf$/i)) {
-      return;
-    }
-    
+    // TODO(radi): Check Flash movies that are loaded over <object/>.    
     var code = 0;
     var notes = "";
+    var isFlash = url.match(/\.swf$/i);
     
-    var scriptAccess = elem.getAttribute("allowScriptAccess");
-    if(scriptAccess && !!scriptAccess.match(/^always$/i)) {
-      code = 2; // Medium
-      notes += "Loading Flash movie with allowScriptAccess set to \"always\".\n";
+    if(elem instanceof HTMLEmbedElement) {
+      var scriptAccess = elem.getAttribute("allowScriptAccess");
+      if(scriptAccess && !!scriptAccess.match(/^always$/i)) {
+        code = 2; // Medium
+        notes += 
+            "Loading Flash movie with allowScriptAccess set to \"always\".\n";
+      }
     }
 
     // Check content-type
     var type = elem.getAttribute("type");
-    if(!type || !type.match(/^application\/x-shockwave-flash$/i)) {
-      code = 3; // High
-      notes += "Loading Flash movie using wrong content type.\n";
+    if(!!elem.nodeName.match(/^embed$/)) {
+      if(!type || !type.match(/^application\/x-shockwave-flash$/i)) {
+        code = 3; // High
+        notes += "Loading Flash movie using wrong content type.\n";      
+      }
+    } else {
+      var classId = elem.getAttribute("classid");
+      
+      if((!classId || classId.length == 0) && (!type || type.length == 0)) {
+        console.debug(url);
+        console.dir(elem);
+        code = 3; // High
+        var article = !!elem.nodeName.match(/^[aeiou]/i) ? "an" : "a"; 
+        notes += "Loading a resource through " + article + " " + elem.nodeName
+            + " tag without specifying content type nor selecting plug-in.\n";      
+      }
     }
     
     if(code > 0) {
@@ -92,7 +105,7 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
     for(var i = 0; i < safeOrigins.length; i++) {
       var regex = new RegExp("^((http|https):){0,1}\\/\\/[\\w\\.-]*" +
         safeOrigins[i].replace(".", "\\."), "i");
-      if(elem.src.match(regex)) {
+      if((elem.src ? elem.src : url).match(regex)) {
         isTrustedSource = true;
         break;
       }
@@ -129,6 +142,7 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
       return;
     }
     
+    
     var regex = new RegExp("^((http|https):){0,1}\\/\\/[\\w\\.-]*" +
       this._getOwnTld(location.hostname).replace(".", "\\."), "i");
     
@@ -147,6 +161,11 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
         gid: elem.gid ? elem.gid : this._createGlobalId(elem),
         env: {}
       };
+      
+      if(src.match(/^chrome-extension:/i)) {
+        record.code = 1; // Low
+        record.notes = "Loading of scripts from an extension.\n";
+      }
 
       this._report(record);
     }
@@ -174,27 +193,29 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
   },
   
   _getEmbedSource: function(event) {
-    //TODO
     var elem = event.target;
-    if(!elem.nodeName.match(/^embed$/i) || event.url == "") {
+    if(!elem.nodeName.match(/^(embed|object)$/i) || event.url == "") {
       return;
     }
-    
+
     var debugInfo = this._dbg.collectStackTrace();
     window.setTimeout(
-        this._checkEmbedAttributes.bind(this, elem, debugInfo), 10);
-    
+      this._checkEmbedAttributes.bind(this, elem, event.url, debugInfo), 10);
+
+
     // Add the safe origins from crossdomain.xml
-    var timestamp = new Date(0);
-    var xhr = new XMLHttpRequest;
-    xhr.open("GET", location.origin + "/crossdomain.xml", false);
-    xhr.setRequestHeader("If-Modified-Since", timestamp.toUTCString());
-    xhr.addEventListener(
-      "readystatechange",
-      this._checkEmbedSource.bind(this, elem, event.url, debugInfo),
-      true
-    );
-    xhr.send();
+    if(event.url.match(/\.swf$/i)) {
+      var timestamp = new Date(0);
+      var xhr = new XMLHttpRequest;
+      xhr.open("GET", location.origin + "/crossdomain.xml", false);
+      xhr.setRequestHeader("If-Modified-Since", timestamp.toUTCString());
+      xhr.addEventListener(
+        "readystatechange",
+        this._checkEmbedSource.bind(this, elem, event.url, debugInfo),
+        true
+      );
+      xhr.send();
+    }
   },
   
   _getOwnTld: function(hostname) {

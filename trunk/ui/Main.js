@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-DOMSnitch.UI.Main = function() {
+DOMSnitch.UI.Main = function(rootPath) {
   this._appName = "DOM Snitch";
   this._configManager = new DOMSnitch.UI.ConfigManager(this);
   this._configManager.applyConfig();
   this._checkVersion();
 
-  this._heuristicsPath = "scanner/heuristics/";
-  this._notifierPath = "ui/notification/";
+  this._rootPath = rootPath ? rootPath : "/";
   this._registeredHeuristics = [];
   this._storage = new DOMSnitch.Storage(this);
   this._tabManager = new DOMSnitch.UI.TabManager(this);
@@ -30,7 +29,7 @@ DOMSnitch.UI.Main = function() {
   chrome.extension.onRequest.addListener(this._handleDismissRequest.bind(this));
   chrome.extension.onRequest.addListener(this._handleRecordCapture.bind(this));
   chrome.tabs.onUpdated.addListener(this._handleUpdatedTab.bind(this));
-  chrome.webNavigation.onBeforeNavigate.addListener(this._loadHeuristics.bind(this));
+  chrome.webNavigation.onCommitted.addListener(this._loadHeuristics.bind(this));
   
   chrome.browserAction.setBadgeBackgroundColor({color: [25, 99, 147, 255]});
   this._countMsg = " issues found!";
@@ -51,6 +50,10 @@ DOMSnitch.UI.Main.prototype = {
   
   get registeredHeuristics() {
     return this._registeredHeuristics;
+  },
+  
+  get rootPath() {
+    return this._rootPath;
   },
 
   get selectedOptions() {
@@ -160,12 +163,13 @@ DOMSnitch.UI.Main.prototype = {
   },
   
   _loadHeuristics: function(details) {
-    if(details.frameId != 0) {
+    var tabId = details.tabId;
+    var tabUrl = details.url;
+    
+    if(!!tabUrl.match(/^https:\/\/chrome.google.com/)) {
       return;
     }
     
-    var tabId = details.tabId;
-    var tabUrl = details.url;
     var inScope = this._configManager.isUrlInScope(tabUrl) &&
         !!tabUrl.match(/^https{0,1}:/i);
     if(inScope) {
@@ -180,18 +184,20 @@ DOMSnitch.UI.Main.prototype = {
       );
       chrome.tabs.executeScript(
         tabId, 
-        {file: this._heuristicsPath + "StartHeuristics.js", allFrames: true}
+        {
+          file: this._rootPath + "scanner/heuristics/StartHeuristics.js", 
+          allFrames: true
+        }
       );
       
       var mode = this._tabManager.getMode(tabId);
       if(mode != DOMSnitch.UI.TabManager.MODES.Standby &&
               window.localStorage["hideNotification"] != "true") {
-        chrome.tabs.insertCSS(
-            tabId, {file: this._notifierPath + "notifier.css"});
+        var notifierPath = this._rootPath + "ui/notification/";
+        chrome.tabs.insertCSS(tabId, {file: notifierPath + "notifier.css"});
         chrome.tabs.executeScript(
             tabId, {code: "window.APP_NAME = '" + this.appName + "'"});
-        chrome.tabs.executeScript(
-            tabId, {file: this._notifierPath + "Notifier.js"});
+        chrome.tabs.executeScript(tabId, {file: notifierPath + "Notifier.js"});
       }
     }
   },

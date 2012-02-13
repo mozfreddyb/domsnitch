@@ -108,7 +108,7 @@ DOMSnitch.UI.Base.prototype = {
       this._window.close();
     }
   },
-
+  
   showViewer: function() {
     this._window = window.open(this._htmlFile, this._windowName);
     this._window.addEventListener("load", this._build.bind(this));

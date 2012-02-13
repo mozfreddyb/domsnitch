@@ -35,7 +35,7 @@ DOMSnitch.UI.ActivityLog = function(parent) {
   this._exportCursor = undefined;
   
   this.showViewer();
-  this._parent.storage.selectAll("id", "asc", this.displayRecord.bind(this));
+  this._parent.storage.selectAll("scanInfo", "desc", this.displayRecord.bind(this));
 }
 
 DOMSnitch.UI.ActivityLog.prototype = new DOMSnitch.UI.RichUI;
@@ -144,7 +144,7 @@ DOMSnitch.UI.ActivityLog.prototype._handleMenuItemView = function() {
   
   this._clear();
   this._build();
-  this._parent.storage.selectAll("id", "asc", this.displayRecord.bind(this));
+  this._parent.storage.selectAll("scanInfo", "desc", this.displayRecord.bind(this));
 }
 
 DOMSnitch.UI.ActivityLog.prototype._isNestingEnabled = function() {

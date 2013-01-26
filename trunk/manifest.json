@@ -17,8 +17,11 @@
 {
   "name": "DOM Snitch",
   "version": "0.743",
+  "manifest_version": 2,
   "description": "A passive reconnaissance tool inside the DOM (experimental)",
-  "background_page": "base.html",
+  "background": {
+    "page": "base.html"
+  },
   "options_page": "ui/config/config.html",
   "browser_action": {
     "default_icon": "icons/plain.png", 
@@ -29,7 +32,8 @@
     "http://*/*",
     "https://*/*",
     "unlimitedStorage",
-    "webNavigation"
+    "webNavigation",
+    "webRequest"
   ],
   "content_scripts": [
     {
@@ -57,5 +61,13 @@
       "all_frames": true
     }
   ],
-  "content_security_policy": "default-src 'self'; script-src 'unsafe-inline' 'self'; connect-src 'self' http: https:"
+  "web_accessible_resources": [
+    "glue/DOMSnitch.js",
+    "modules/Base.js",
+    "modules/Document.js",
+    "modules/Window.js",
+    "modules/XmlHttpRequest.js"
+  ],
+  "homepage_url": "https://code.google.com/p/domsnitch/",
+  "content_security_policy": "default-src 'self'; style-src 'self'; connect-src 'self' http: https:"
 }

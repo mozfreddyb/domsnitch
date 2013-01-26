@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * Exports records from the Activity Log to Google Docs.
+ */
 DOMSnitch.Export.GoogleDocs = function(parent, statusBar, scanVerbosity) {
   this._parent = parent;
   this._statusBar = statusBar;
@@ -49,7 +52,8 @@ DOMSnitch.Export.GoogleDocs = function(parent, statusBar, scanVerbosity) {
   });
   
   // A hack to counter a bug in the ChromeExOAuth constructor
-  this._oauth.callback_page = "/third_party/chrome_ex_oauth.html";  
+  this._oauth.callback_page = 
+      this._parent.rootPath + "/third_party/chrome_ex_oauth.html";  
 }
 
 DOMSnitch.Export.GoogleDocs.prototype = {
@@ -226,9 +230,22 @@ DOMSnitch.Export.GoogleDocs.prototype = {
     this._oauth.authorize(this._onAuthorized.bind(this));
   },
   
-  bulkExport: function() {
-    this._parent.storage.getRecordCount(this._getRecordCount.bind(this));
-    this._searchFunction = this._parent.storage.selectAll.bind(this._parent.storage, "id", "asc");
+  bulkExport: function(records) {
+    //TODO(radi): Fix the export flow.
+    if(!!records) {
+      for(var i = 0; i < records.length; i++) {
+        var record = records[i];
+        record.code = this._scanner.stringifyStatusCode(record.scanInfo.code);
+        record.notes = record.scanInfo.notes;
+      }
+      this._recordBuff = records;
+      this._searchFunction = this._sendRecords;
+    } else {
+      this._parent.storage.getRecordCount(this._getRecordCount.bind(this));
+      this._searchFunction =
+        this._parent.storage.selectAll.bind(this._parent.storage, "id", "asc");
+    }
+
     this._startExport();
   },
   

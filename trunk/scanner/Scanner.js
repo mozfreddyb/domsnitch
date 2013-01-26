@@ -16,9 +16,11 @@
 
 DOMSnitch.Scanner = function() {
   var scriptSource = new DOMSnitch.Scanner.ScriptSource;
+  var externalUi = new DOMSnitch.Scanner.ExternalUI;
   
   this._scanners = {
-    "Untrusted code": [scriptSource]
+    "Untrusted code": [scriptSource],
+    "External UI" : [externalUi]
   };
   
   // Heuristics that live inside the main extension.

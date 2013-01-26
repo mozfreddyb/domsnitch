@@ -27,6 +27,20 @@ DOMSnitch.Import = {};
 
 DOMSnitch.Import.GoogleDocs = function(parent) {
   this._parent = parent;
+  
+  this._oauth = ChromeExOAuth.initBackgroundPage({
+    "request_url": "https://www.google.com/accounts/OAuthGetRequestToken",
+    "authorize_url": "https://www.google.com/accounts/OAuthAuthorizeToken",
+    "access_url": "https://www.google.com/accounts/OAuthGetAccessToken",
+    "consumer_key": "anonymous",
+    "consumer_secret": "anonymous",
+    "scope": "https://docs.google.com/feeds/ https://spreadsheets.google.com/feeds/ https://docs.googleusercontent.com/",
+    "app_name": parent.appName
+  });
+  
+  // A hack to counter a bug in the ChromeExOAuth constructor
+  this._oauth.callback_page = 
+      this._parent.rootPath + "/third_party/chrome_ex_oauth.html";
 }
 
 DOMSnitch.Import.GoogleDocs.prototype = {
@@ -112,7 +126,46 @@ DOMSnitch.Import.GoogleDocs.prototype = {
       }
     }
     
+    notes = notes.replace(/\[doublequote\]/g, "\"");
+    
     return {code: code, notes: notes};
+  },
+  
+  _sendLoadRequest: function(spreadsheetId) {
+    //TODO
+    /*
+    var pingXhr = event.target;
+    if(pingXhr.readyState != 4) {
+      return;
+    }
+    */
+    var importUrl = "https://spreadsheets.google.com/feeds/download/" +
+        "spreadsheets/Export?key=" + spreadsheetId + "&exportFormat=csv&gid=0";
+    
+    console.debug(importUrl);
+    var xhr = new XMLHttpRequest;
+    xhr.open("GET", importUrl, false);
+    
+    var authz = this._oauth.getAuthorizationHeader(importUrl, "GET", {});
+    //xhr.setRequestHeader("Authorization", authz);
+
+    
+    try {
+      xhr.send();
+    } catch(e) {
+      console.debug(xhr.status);
+      console.debug(xhr.responseText);
+      console.error(e);
+      alert("Could not retrieve spreadsheet. Possible authentication error.");
+    }
+    
+    var parsedFile = this._parseFile(xhr.responseText);
+    for(var i = 0; i < parsedFile.length; i++) {
+      var record = this._parseRow(parsedFile[i]);
+      
+      this._parent.storage.insert(record);
+      this._parent.activityLog.displayRecord(record);
+    }
   },
   
   load: function(url) {
@@ -123,26 +176,7 @@ DOMSnitch.Import.GoogleDocs.prototype = {
       return;
     }
     
-    var importUrl = "https://spreadsheets.google.com/feeds/download/" +
-    		"spreadsheets/Export?key=" + spreadsheetId + "&exportFormat=csv&gid=0";
+    this._oauth.authorize(this._sendLoadRequest.bind(this, spreadsheetId));
     
-    console.debug(importUrl);
-    
-    var xhr = new XMLHttpRequest;
-    xhr.open("GET", importUrl, false);
-    
-    try {
-      xhr.send();
-    } catch(e) {
-      console.error("Could not retrieve spreadsheet. Possible authentication error.");
-    }
-    
-    var parsedFile = this._parseFile(xhr.responseText);
-    for(var i = 0; i < parsedFile.length; i++) {
-      var record = this._parseRow(parsedFile[i]);
-      
-      this._parent.storage.insert(record);
-      this._parent.activityLog.displayRecord(record);
-    }
   }
 }

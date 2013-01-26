@@ -25,3 +25,11 @@ if(!DOMSnitch.UI) {
 if(!DOMSnitch.UI.Config) {
   DOMSnitch.UI.Config = {};
 }
+
+
+document.addEventListener(
+  "DOMContentLoaded", 
+  function() {
+    config = new DOMSnitch.UI.Config.Main();
+  }, 
+  true);

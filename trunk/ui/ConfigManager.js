@@ -26,7 +26,8 @@ DOMSnitch.UI.ConfigManager = function(parent) {
     "untrustedcode": "Untrusted code",
     "scriptinclusion": "Script inclusion",
     "xpcmonitor": "XPC monitor",
-    "plugins": "Plug-ins"
+    "plugins": "Plug-ins",
+    "externalui": "External UI"
   };
 }
 
@@ -133,7 +134,7 @@ DOMSnitch.UI.ConfigManager.prototype = {
       
       for(var i = 0; i < config.heuristics.length; i++) {
         var heuristic = config.heuristics[i].toLowerCase();
-        heuristic = heuristic.replace(/\s/g, "");
+        heuristic = heuristic.replace(/[\s-]/g, "");
         heuristic = this._heuristicsTable[heuristic];
         availHeuristics[heuristic] = 1;
       }

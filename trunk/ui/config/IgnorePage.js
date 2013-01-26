@@ -95,6 +95,14 @@ DOMSnitch.UI.Config.IgnorePage.prototype._buildDialog = function(document) {
                       "hint=E.g.: sameorigin,www.example.com,http://example.com"
                     ],
                     text: "XPC monitor"
+                  },
+                  {
+                    tag: "option",
+                    attr: [
+                      "value=Untrusted code",
+                      "hint=E.g.: www.example.com,*.example.com"
+                    ],
+                    text: "Untrusted code"
                   }
                 ]
               }]

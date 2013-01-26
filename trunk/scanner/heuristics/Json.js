@@ -72,7 +72,7 @@ DOMSnitch.Heuristics.Json.prototype = {
       }
       
       if(!canParse && hasCode) {
-        code = 3; // High
+        code = 2; // Medium
         notes += "Found code in JSON object.\n";
       }
     }
@@ -171,8 +171,18 @@ DOMSnitch.Heuristics.Json.prototype = {
   _stripBreakers: function(jsData) {
     var cIdx = jsData.indexOf("{");
     var aIdx = jsData.indexOf("[");
-    idx = cIdx > -1 && cIdx < idx ? cIdx : idx;
-    idx = aIdx > -1 && aIdx < idx ? aIdx : idx;
+    var cfIdx = jsData.lastIndexOf("}");
+    var afIdx = jsData.lastIndexOf("]");
+    
+    var idx = 0;
+    var fidx = 0;
+    if(cIdx > -1 && aIdx > -1) {
+      idx = cIdx > aIdx ? aIdx : cIdx;
+    } else if(cIdx > -1) {
+      idx = cIdx;
+    } else if(aIdx > -1) {
+      idx = aIdx;
+    }
     
     return jsData.substring(idx);
   }

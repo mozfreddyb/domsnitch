@@ -165,6 +165,15 @@ DOMSnitch.StorageWorker.prototype = {
     );
   },
   
+  _deleteRecord: function(id, tx) {
+    tx.executeSql(
+      "delete from activityLog where id = ?;",
+      [id],
+      null,
+      this._error.bind(this)
+    );
+  },
+  
   _dropTable: function(tx) {
     tx.executeSql(
       "drop table if exists activityLog;",
@@ -193,6 +202,8 @@ DOMSnitch.StorageWorker.prototype = {
       func = this._createGetMaxId(cookie).bind(this);
     } else if(input.type == "count") {
       func = this._createGetRecordCount(cookie).bind(this);
+    } else if(input.type == "delete") {
+      func = this._deleteRecord.bind(this, input.id);
     } else if(input.type == "deleteAll") {
       this._database.transaction(this._dropTable.bind(this));
       this._database.transaction(this._createTable.bind(this));

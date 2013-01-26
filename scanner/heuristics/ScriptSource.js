@@ -134,9 +134,9 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
   _checkScriptSource: function(event) {
     var elem = event.target;
     var src = null;
-    if(elem.nodeName == "SCRIPT") {
+    if(!!elem.nodeName.match(/^script$/i)) {
       src = elem.src;
-    } else if(!!elem.nodeName.match(/^link$/i) && event.url.match(/\.css$/)) {      
+    } else if(!!elem.nodeName.match(/^link$/i) && !!event.url.match(/\.css$/)) {      
       src = elem.href;
     } else {
       return;
@@ -164,7 +164,10 @@ DOMSnitch.Heuristics.ScriptSource.prototype = {
       
       if(src.match(/^chrome-extension:/i)) {
         record.code = 1; // Low
-        record.notes = "Loading of scripts from an extension.\n";
+        record.notes = "Loading scripts from an extension.\n";
+      } else if(src.match(/^data:/i)) {
+        record.code = 2; // Medium
+        record.notes = "Loading scripts through the data protocol.\n"
       }
 
       this._report(record);

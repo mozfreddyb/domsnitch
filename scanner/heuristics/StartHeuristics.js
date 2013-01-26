@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// Enable debugging.
+window.USE_DEBUG = true;
+
+
 /** 
  * Load these heuristics anyway as they are harmless to the page. 
  */
@@ -40,6 +44,7 @@ if(!window.LOADED) {
   hList.push("ScriptSource");
   hList.push("ScriptInclusion");
   hList.push("Plugins");
+  hList.push("ExternalUI");
   
   for(var i = 0 ; i < hList.length; i++) {
     var hClass = DOMSnitch.Heuristics[hList[i]];
@@ -68,7 +73,7 @@ if(!!window.IN_SCOPE) {
     var hClass = DOMSnitch.Heuristics[hList[i]];
     
     if(!!hClass && !hClass.loaded && !hClass.EXPERIMENTAL) {
-      hObj = new hClass();
+      var hObj = new hClass();
       hClass.loaded = true;
     }
   }

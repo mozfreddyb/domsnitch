@@ -46,12 +46,12 @@ DOMSnitch.UI.Config.BasicsPage.prototype._buildUpdates = function(document) {
     message = message ? message : "";
     delete window.localStorage["config-load-msg"];
     
-    var color = "red"; 
+    var className = "failure"; 
     if(message.indexOf("successfully") > 0) {
-      color = "green";
+      className = "success";
     }
     
-    return {tag: "div", attr: ["style=color:" + color], text: message};
+    return {tag: "div", attr: ["class=" + className], text: message};
   };
   
   var setFeedback = function(configData) {

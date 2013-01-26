@@ -105,6 +105,31 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
   },
   
   /** 
+   * Untrusted code ignore capability. 
+   * Syntax: www.example.com, *.example.com 
+   */
+  _checkUntrustedCode: function(rule, record) {
+    //TODO
+    if(!rule.conditions || rule.conditions.length == 0) {
+      return false;
+    }
+
+    var data = record.data.split("\n\n-----\n\n");
+    var untrustedUrl = data && data[0] && data[0].split("\n")[1];
+    untrustedUrl = untrustedUrl.replace(/^[\w-:]*\/\//, "");
+    untrustedUrl = untrustedUrl.replace(/\/.*$/, "");
+    
+    var origins = rule.conditions.split(",");
+    var found = false;
+    for(var i = 0; !found && i < origins.length; i++) {
+      var needle = origins[i].trim();
+      found = this._checkUrl({url: needle}, untrustedUrl);
+    }
+    
+    return found;
+  },
+  
+  /** 
    * XPC monitor ignore capability. 
    * Syntax: sameorigin,www.example.com,http://example.com 
    */
@@ -161,6 +186,8 @@ DOMSnitch.Scanner.IgnoreList.prototype = {
           ignore = ignore | this._checkHttpHeaders(rule, record);
         } else if(record.type == "XPC monitor") {
           ignore = ignore | this._checkXpcMonitor(rule, record);
+        } else if(record.type == "Untrusted code") {
+          ignore = ignore | this._checkUntrustedCode(rule, record);
         }
       }
     }

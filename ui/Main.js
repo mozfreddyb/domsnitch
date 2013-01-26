@@ -144,7 +144,7 @@ DOMSnitch.UI.Main.prototype = {
       }
     }
     
-    if(this._configManager.isInScope(sender.tab.url, record.type, false)) {
+    if(this._configManager.isInScope(record.documentUrl, record.type, false)) {
       record.scanInfo = this._scanner.checkOnCapture(record);
       
       if(record.scanInfo) {
@@ -202,7 +202,7 @@ DOMSnitch.UI.Main.prototype = {
     }
   },
   
-  exportAll: function() {
+  exportAll: function(records) {
     var mockStatus = {
       hide: function(){},
       setText: function(){}
@@ -213,7 +213,7 @@ DOMSnitch.UI.Main.prototype = {
       mockStatus, 
       DOMSnitch.Scanner.STATUS.NONE
     );
-    exporter.bulkExport();
+    exporter.bulkExport(records);
   },
   
   setFindingsCount: function(count) {

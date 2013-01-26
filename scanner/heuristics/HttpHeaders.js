@@ -22,12 +22,15 @@ DOMSnitch.Heuristics.HttpHeaders = function() {
   window.setTimeout(this._checkOwnHeaders.bind(this), 10);
 }
 
+DOMSnitch.Heuristics.HttpHeaders.pageXhr = undefined;
+
 DOMSnitch.Heuristics.HttpHeaders.prototype = {
   _checkCharacterSet: function(xhr) {
     var contentTypeHeader = xhr.getResponseHeader("content-type");
     var contentLengthHeader = xhr.getResponseHeader("content-length");
     if(/^.*charset=/i.test(contentTypeHeader) ||
-       /^image/i.test(contentTypeHeader) || contentLengthHeader == "0") {
+       /^image/i.test(contentTypeHeader) || contentLengthHeader == "0" ||
+       /^<html><\/html>/i.test(xhr.responseText)) {
       return;
     }
     
@@ -90,6 +93,12 @@ DOMSnitch.Heuristics.HttpHeaders.prototype = {
     xhr.open("GET", location.href, false);
     xhr.send();
 
+    // Leave a pointer to the XHR object in case other heuristics need to 
+    // examine it.
+    if(!DOMSnitch.Heuristics.HttpHeaders.pageXhr) {
+      DOMSnitch.Heuristics.HttpHeaders.pageXhr = xhr;
+    }
+    
     // Return if the document is empty.
     if(xhr.responseText.length == 0) {
       return;
@@ -107,10 +116,7 @@ DOMSnitch.Heuristics.HttpHeaders.prototype = {
       data: reportData,
       callStack: [],
       gid: location.href + "#HTTPHeaders",
-      env: {
-        location: document.location.href,
-        referrer: document.referrer
-      },
+      env: {},
       scanInfo: {code: code, notes: notes}
     };
           

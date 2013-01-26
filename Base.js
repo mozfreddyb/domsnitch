@@ -17,3 +17,25 @@
 DOMSnitch = {};
 DOMSnitch.UI = {};
 DOMSnitch.Export = {};
+
+
+document.addEventListener(
+  "DOMContentLoaded", 
+  function() {
+    if(!!DOMSnitch.UI.Main) {
+      base = new DOMSnitch.UI.Main();      
+    }
+  }, 
+  true);
+
+chrome.extension.onMessage.addListener(
+  function(req, sender, callback) {
+    if(!!sender.tab && req.type == "getModule") {
+      var xhr = new XMLHttpRequest;
+      var moduleUrl = chrome.extension.getURL(req.moduleSource);
+      xhr.open("GET", moduleUrl, false);
+      xhr.send();
+
+      callback(xhr.responseText);
+    }
+  });

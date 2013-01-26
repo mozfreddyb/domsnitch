@@ -75,11 +75,20 @@ DOMSnitch.Modules.Document.prototype._createDocumentWrite = function(targetName)
   };
 }
 
-DOMSnitch.Modules.Document.prototype._createDocumentDomain = function() {
+DOMSnitch.Modules.Document.prototype._createDocumentDomainGetter = function() {
+  var currentDomain = document.domain;
+  return function() {
+    return currentDomain;
+  }
+}
+
+DOMSnitch.Modules.Document.prototype._createDocumentDomainSetter = function() {
   var module = this;
   return function(value) {
     module.htmlElem.setAttribute("docDomain", module._parent.JSON.stringify(value));
     document.dispatchEvent(module.documentDomainEvt);
+    
+    return value;
   }
 }
 
@@ -96,7 +105,8 @@ DOMSnitch.Modules.Document.prototype.load = function() {
       "document.writeln", "doc.write", this._createDocumentWrite("document.writeln"));
   //this._overloadMethod(
   //  "document.createElement", "doc.createElem", this._createElement.bind(this));
-  document.__defineSetter__("domain", this._createDocumentDomain());
+  document.__defineGetter__("domain", this._createDocumentDomainGetter());
+  document.__defineSetter__("domain", this._createDocumentDomainSetter());
 
   this._loaded = true;
 }

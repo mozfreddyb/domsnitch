@@ -28,12 +28,12 @@ DOMSnitch.Storage = function(parent) {
   
   this._id = 0;
   this.getMaxId(this._setId.bind(this));
+  this.getRecordCount(this._parent.setFindingsCount.bind(this._parent));
 }
 
 DOMSnitch.Storage.prototype = {
   _setId: function(id) {
     this._id = id > 0 ? id : 0;
-    this._parent.setFindingsCount(this._id);
     this._id++;
   },
   
@@ -60,6 +60,12 @@ DOMSnitch.Storage.prototype = {
     this._parent.setFindingsCount(0);
   },
   
+  deleteRecord: function(record) {
+    //TODO(radi): Remove an individual record.
+    this._worker.postMessage(JSON.stringify({type: "delete", id: record.id}));
+    this.getRecordCount(this._parent.setFindingsCount);
+  },
+  
   getMaxId: function(callback) {
     var cookie = this._cookie++;
     this._callbackMap[cookie] = callback;
@@ -75,7 +81,7 @@ DOMSnitch.Storage.prototype = {
   insert: function(record) {
     record.id = this._id++;
     this._worker.postMessage(JSON.stringify({type: "store", data: record}));
-    this._parent.setFindingsCount(record.id);
+    this.getRecordCount(this._parent.setFindingsCount);
   },
   
   selectAll: function(colId, order, callback) {

@@ -25,3 +25,10 @@ if(!DOMSnitch.UI) {
 if(!DOMSnitch.UI.Menu) {
   DOMSnitch.UI.Menu = {};
 }
+
+document.addEventListener(
+  "DOMContentLoaded", 
+  function() {
+    menu = new DOMSnitch.UI.Menu.Main()
+  }, 
+  true);

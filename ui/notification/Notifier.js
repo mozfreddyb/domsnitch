@@ -19,13 +19,11 @@ if(!window.DOMSnitch) {
 }
 
 DOMSnitch.Notifier = function() {
-  //TODO
   this.showNotification();
 }
 
 DOMSnitch.Notifier.prototype = {
   hideNotification: function() {
-    //TODO
     var document = window.top.document;
     var note = document.getElementById("ds-note");
     document.body.removeChild(note);
@@ -37,7 +35,6 @@ DOMSnitch.Notifier.prototype = {
   },
   
   showNotification: function() {
-    //TODO
     var document = window.top.document;
     var note = document.getElementById("ds-note");
     if(!note) {
@@ -56,7 +53,6 @@ DOMSnitch.Notifier.prototype = {
     space.textContent = "] [";
     note.appendChild(space);
 
-    //TODO(radi): Find the proper place for this link (if any).
     var pDismiss = document.createElement("a");
     pDismiss.textContent = "Dismiss this message permanently";
     pDismiss.addEventListener("click", this.permanentlyHideNotification.bind(this), true);
